@@ -30,6 +30,8 @@ namespace TextCraft.src.Core.ChunkModel
         public ConcurrentQueue<Vector3i> gridDeleteQueue = new ConcurrentQueue<Vector3i>();
         public ConcurrentQueue<Vector3i> gridUpdateQueue = new ConcurrentQueue<Vector3i>();
 
+        public ConcurrentQueue<Vector3i> gridUpdateFinishQueue = new ConcurrentQueue<Vector3i>();
+
         private HashSet<Vector3i> chunkCreateRequest = new HashSet<Vector3i>();
         private HashSet<Vector3i> chunkDeleteRequest = new HashSet<Vector3i>();
         private HashSet<Vector3i> gridCommitRequest = new HashSet<Vector3i>();
@@ -108,6 +110,7 @@ namespace TextCraft.src.Core.ChunkModel
         }
         private void UpdateRanderChunk(Vector3i chunkPos)
         {
+            gridUpdateFinishQueue.Enqueue(chunkPos);
             Grid grid = _gridMgr.grids["default"][chunkPos];
 
             if(!_gridMgr.grids["lucency"].TryGetValue(chunkPos , out var grid2))
@@ -122,6 +125,7 @@ namespace TextCraft.src.Core.ChunkModel
 
             if (!_gridMgr.grids["lucency"].ContainsKey(chunkPos) && grid2.vertices.Length == 0)
                 grid2.Dispose();
+
         }
 
         private void DeleteRanderChunk(Vector3i chunkPos)
@@ -158,7 +162,7 @@ namespace TextCraft.src.Core.ChunkModel
 
         public void CommitGridCommitRequest(Vector3i chunkPos)
         {
-            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos);
+            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos) || _gridMgr.grids["lucency"].ContainsKey(chunkPos);
             bool hasRequest = gridCommitRequest.Contains(chunkPos);
             if (!hasGrid && !hasRequest)
             {
@@ -171,20 +175,18 @@ namespace TextCraft.src.Core.ChunkModel
 
         public void CommitGridUpdateRequest(Vector3i chunkPos)
         {
-            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos);
+            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos) || _gridMgr.grids["lucency"].ContainsKey(chunkPos);
             bool hasRequest = gridUpdateRequest.Contains(chunkPos);
             if (hasGrid && !hasRequest)
             {
                 gridUpdateRequest.Add(chunkPos);
                 gridUpdateQueue.Enqueue(chunkPos);
             }
-            if (hasGrid)
-                gridUpdateRequest.Remove(chunkPos);
         }
 
         public void CommitGridDeleteRequest(Vector3i chunkPos)
         {
-            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos);
+            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos) || _gridMgr.grids["lucency"].ContainsKey(chunkPos);
             bool hasRequest = gridDeleteRequest.Contains(chunkPos);
             if (hasGrid && !hasRequest)
             {
@@ -195,6 +197,10 @@ namespace TextCraft.src.Core.ChunkModel
                 gridDeleteRequest.Remove(chunkPos);
         }
 
+        public void RemoveGridUpdateRequest(Vector3i chunkPos)
+        {
+            gridUpdateRequest.Remove(chunkPos);
+        }
     
     }    
 }

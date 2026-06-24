@@ -61,6 +61,7 @@ namespace TextCraft.src.Core
 
             Console.Clear();
             Console.WriteLine("FPS: " + 1 / UpdateTime);
+            Console.WriteLine("Time: " + (int)world.GameTime);
         }
         protected override void OnResize(ResizeEventArgs e)
         {
@@ -72,7 +73,7 @@ namespace TextCraft.src.Core
         static void Main(string[] args)
         {
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
-            using (Game game = new Game(800, 600, "Textcraft"))
+            using (Game game = new Game(800, 600, "craft"))
             {
                 game.Run();
             }
@@ -84,7 +85,12 @@ namespace TextCraft.src.Core
             if (e.Key == Keys.S) world.inputMgr.back = true;
             if (e.Key == Keys.A) world.inputMgr.left = true;
             if (e.Key == Keys.D) world.inputMgr.right = true;
-            if (e.Key == Keys.Space) world.inputMgr.up = true;
+            if (e.Key == Keys.Space) 
+            { 
+                world.inputMgr.up = true;
+                if(world.player.onGround)
+                    world.player.velocity += Vector3.UnitY *15;
+            }
             if (e.Key == Keys.LeftShift) world.inputMgr.down = true;
             if (e.Key == Keys.F12) GC.Collect();
         }

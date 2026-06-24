@@ -38,7 +38,6 @@ namespace TextCraft.src.Rendering
                 grid.ResetForPool();
                 Pools.Ins.gridPool.Enter(grid);
             }
-                
         }
     }
 }

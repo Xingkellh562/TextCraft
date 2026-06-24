@@ -36,7 +36,7 @@ namespace TextCraft.src.Core.Input
         private float UpdateAxis(float time,float speed,ref float axis,bool positive,bool negative)
         {
             if(axis != 0) axis += axis > 0 ? -2 * time:2 * time;
-            if(MathF.Abs(axis) < 1e-2) axis = 0;
+            if(MathF.Abs(axis) < time) axis = 0;
 
             if (positive) axis += time * Scale;
             if (negative) axis -= time * Scale;
@@ -117,7 +117,7 @@ namespace TextCraft.src.Core.Input
 
                 world.chunkDataMgr.SetBlock(hitPos.X, hitPos.Y, hitPos.Z, nowBlock * 16 + dir);
 
-                if (world.player.IsInterSectInAxis(world.chunkDataMgr,Vector3.Zero,0))
+                if (world.player.IsInterSectInAxis(world.chunkDataMgr,world.playerPos))
                 {
                     world.chunkDataMgr.SetBlock(hitPos.X, hitPos.Y, hitPos.Z, 0);
                     return;

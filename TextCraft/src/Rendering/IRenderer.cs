@@ -47,7 +47,7 @@ namespace TextCraft.src.Rendering
         {
             shader.CreateShaderProgram();
 
-            shader.LoadTexture(AppContext.BaseDirectory + "Resourges\\blockatlas1.png");
+            shader.LoadTexture(AppContext.BaseDirectory + "Resources\\blockatlas1.png");
 
             //启用一些设置
             GL.Enable(EnableCap.DepthTest);
@@ -66,10 +66,16 @@ namespace TextCraft.src.Rendering
 
             shader.GetMatrix(cameraPos, cameraDir, _size);
 
-            if(ConfigMgr.Ins.graphicConfig.fog)
-                shader.SetFog(ClearColor, ConfigMgr.Ins.graphicConfig.ViewRange-48, ConfigMgr.Ins.graphicConfig.ViewRange);
-            if(world.chunkDataMgr.GetBlock((int)cameraPos.X,(int)cameraPos.Y,(int)cameraPos.Z) == 144)
-                shader.SetFog(new Vector3(0.2f,0.4f,0.8f), 4, 16);
+            if (ConfigMgr.Ins.graphicConfig.fog)
+                shader.SetFog(ClearColor, ConfigMgr.Ins.graphicConfig.ViewRange - 48, ConfigMgr.Ins.graphicConfig.ViewRange);
+            if (world.chunkDataMgr.GetBlock((int)cameraPos.X, (int)cameraPos.Y, (int)cameraPos.Z) == 144)
+            {
+                shader.SetFog(new Vector3(0.2f, 0.4f, 0.8f), 4, 16);
+                GL.ClearColor(0.2f, 0.4f, 0.8f, 1.0f);
+            }
+            else
+                GL.ClearColor(ClearColor.X, ClearColor.Y, ClearColor.Z, 1.0f);
+
             GL.Enable(EnableCap.CullFace);
             foreach (var grid in world.gridMgr.grids["default"].Values)
             {

@@ -25,6 +25,8 @@ namespace TextCraft.src.Core
         public RigidBody player = new RigidBody(50);
 
         public InputMgr inputMgr = new InputMgr();
+
+        public float GameTime = 0;
         public World() 
         {
             chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr);
@@ -37,6 +39,10 @@ namespace TextCraft.src.Core
             gridMgr.AddNewLayers("lucency");
 
             chunkUpdateMgr.StartChunkUpdate();
+            //for(int i = 0; i < 24; i++)
+            //{
+            //    chunkUpdateMgr.CommitGridUpdateRequest(Vector3i.Zero);
+            //}
         }
         public void Update(float updateTime)
         {
@@ -46,7 +52,11 @@ namespace TextCraft.src.Core
 
             playerPos = player.pos;
 
-            player.AddForce(inputMgr.MoveUpdate(updateTime, 12, playerDir)*10000);
+            player.velocity += inputMgr.MoveUpdate(updateTime, 36, playerDir);
+            if(GameTime > 5)
+                player.AddForce(-Vector3.UnitY * 980 * 4);
+
+            GameTime += updateTime;
         }
 
         void CreateRequest()
@@ -56,7 +66,7 @@ namespace TextCraft.src.Core
                 ConfigMgr.Ins.worldConfig.ChunkSizeX,
                 ConfigMgr.Ins.worldConfig.ChunkSizeY,
                 ConfigMgr.Ins.worldConfig.ChunkSizeZ
-                ), 0, 5*32, 6*32, 8*32);
+                ), 0, 5*32, 7*32);
 
             foreach (var chunkPos in list[0])
             {
@@ -67,13 +77,22 @@ namespace TextCraft.src.Core
             foreach (var chunkPos in list[1])
             {
                 chunkUpdateMgr.CommitChunkUpdateRequest(chunkPos);
-                
-                chunkUpdateMgr.CommitGridDeleteRequest(chunkPos);
             }
-            foreach (var chunkPos in list[2])
+            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX,
+                                ConfigMgr.Ins.worldConfig.ChunkSizeY,
+                                ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+            foreach (var chunkPos in chunkDataMgr.Chunks.Keys)
             {
-                chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
+                Vector3 Pos = new Vector3(chunkPos.X * chunkSize.X, chunkPos.Y * chunkSize.Y, chunkPos.Z * chunkSize.Z);
+                if ((Pos - playerPos).Length > 8 * 32)
+                    chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
+                if((Pos - playerPos).Length > 6 * 32)
+                    chunkUpdateMgr.CommitGridDeleteRequest(chunkPos);
             }
+            while (chunkUpdateMgr.gridUpdateFinishQueue.TryDequeue(out Vector3i result))
+                chunkUpdateMgr.RemoveGridUpdateRequest(result);
+
+
         }
     }
 }

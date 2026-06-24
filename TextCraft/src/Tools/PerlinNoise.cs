@@ -71,8 +71,8 @@ namespace TextCraft.src.Tools
             double x2 = Lerp(Grad(ab, fx, fy - 1), Grad(bb, fx - 1, fy - 1), u);
             double result = Lerp(x1, x2, v);
 
-            // 结果范围大约 [-0.8,0.8]，映射到 [0,1]
-            return (result + 0.8) / 1.6;
+            // 结果范围大约 [-0.8,0.8]，映射到 [1,-1]
+            return result / 0.8;
         }
     }
 }

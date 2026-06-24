@@ -13,6 +13,8 @@ namespace TextCraft.src.Core.ChunkModel
     {
         ConcurrentDictionary<Vector3i, Chunk> chunks = new();
 
+        public ConcurrentDictionary<Vector3i, Chunk> Chunks => chunks;
+
         public readonly Vector3i size;
 
         public ChunkDataMgr()

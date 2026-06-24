@@ -22,6 +22,9 @@ namespace TextCraft.src.Core.Config
         int _chunkSizeY = 32;
         int _chunkSizeZ = 32;
 
+        int _seaLevel = 0;
+
+        public int SeaLevel => _seaLevel;
 
         public int ChunkSizeX => _chunkSizeX;
         public int ChunkSizeY => _chunkSizeY;
@@ -30,7 +33,7 @@ namespace TextCraft.src.Core.Config
 
     internal class GraphicConfig: BaseConfig
     {
-        int _viewRange = 112;
+        int _viewRange = 128;
         public int ViewRange => _viewRange;
         public bool fog = true;
     }

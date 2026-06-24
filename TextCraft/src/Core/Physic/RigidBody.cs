@@ -18,6 +18,8 @@ namespace TextCraft.src.Core.Physic
         public Vector3 acceleration;
         public float damp = 0.05f;
 
+        public bool onGround;
+
         Queue<Vector3> _forces = new Queue<Vector3> ();
 
         Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
@@ -43,87 +45,77 @@ namespace TextCraft.src.Core.Physic
                 _forces.Enqueue(force);
             }
 
-            bool[] makeZero = CollisionDetection(chunkMgr, time);
-
-            pos += velocity * time;
+            CollisionDetection(chunkMgr, time);
 
             velocity += acceleration * time;
             velocity -= damp * velocity;
-
-            if (makeZero[0]) velocity.X = 0;
-            if (makeZero[1]) velocity.Y = 0;
-            if (makeZero[2]) velocity.Z = 0;
 
             while (_forces.TryDequeue(out var force))
                 acceleration -= force / _mass;
         }
 
-        public bool[] CollisionDetection(ChunkDataMgr chunkMgr,float time)
+        public void CollisionDetection(ChunkDataMgr chunkMgr, float time)
         {
-            bool[] result = { false, false, false };
-            if (IsInterSectInAxis(chunkMgr, Vector3.UnitX, time))
-            {
-                //float xMove = velocity.X * time;
-                //if (xMove > 0) // 向右
-                //{
-                //    float worldMaxX = pos.X + xMove + box.MaxPos.X;
-                //    velocity.X = ((float)Math.Floor(worldMaxX) - box.MaxPos.X - pos.X) / time;
+            onGround = false;
 
-                //}
-                //else if (xMove < 0) // 向左
-                //{
-                //    float worldMinX = pos.X + xMove + box.MinPos.X;
-                //    velocity.X = ((float)Math.Floor(worldMinX) + 1 - box.MinPos.X - pos.X) / time;
-                //}
-                //else
-                    velocity.X = 0;
-                //result[0] = true;
-            }
-            if (IsInterSectInAxis(chunkMgr, Vector3.UnitY, time))
-            {
-                //float yMove = velocity.Y * time;
-                //if (yMove > 0) // 向上
-                //{
-                //    // 顶部碰到方块底部：maxPos 对齐到 floor(worldMaxPos)
-                //    float worldMaxY = pos.Y + yMove + box.MaxPos.Y;
-                //    velocity.Y = ((float)Math.Floor(worldMaxY) - box.MaxPos.Y - pos.Y) / time;
+            // 1. 子步迭代：防止速度过快时直接穿过薄方块（体素大小为1，单步移动不超过0.3格比较安全）
+            float maxStepDistance = 0.3f;
+            float totalMovement = velocity.Length * time;
+            int steps = Math.Max(1, (int)Math.Ceiling(totalMovement / maxStepDistance));
+            float subTime = time / steps;
 
-                //}
-                //else if (yMove < 0) // 向下
-                //{
-                //    //底部碰到方块顶部：minPos 对齐到 floor(worldMinY) + 1
-                //    float worldMinY = pos.Y + yMove + box.MinPos.Y;
-                //    velocity.Y = ((float)Math.Floor(worldMinY) + 1 - box.MinPos.Y - pos.Y) / time;
-                //}
-                //else
+            for (int step = 0; step < steps; step++)
+            {
+                // --- X轴：先移动，再修正，最后归零速度 ---
+                Vector3 oldPosX = pos;
+                pos.X += velocity.X * subTime;
+                if (IsInterSectInAxis(chunkMgr, pos))
+                {
+                    pos = oldPosX;
+                    if (velocity.X > 0) // 向右撞墙
+                        pos.X = (float)Math.Round(pos.X + box.MaxPos.X) - box.MaxPos.X - 1e-4f;
+                    else if (velocity.X < 0) // 向左撞墙
+                        pos.X = (float)Math.Round(pos.X + box.MinPos.X) - box.MinPos.X + 1e-4f;
+
+                    velocity.X = 0; // 只有修正完位置后，才能放心归零速度
+                }
+
+                // --- Y轴：同上（注意地面的处理）---
+                Vector3 oldPosY = pos;
+                pos.Y += velocity.Y * subTime;
+                if (IsInterSectInAxis(chunkMgr, pos))
+                {
+                    pos = oldPosY;
+                    if (velocity.Y > 0) // 头顶天花板
+                        pos.Y = (float)Math.Round(pos.Y + box.MaxPos.Y) - box.MaxPos.Y - 1e-4f;
+                    
+                    else if (velocity.Y < 0) // 脚踩地板
+                    {
+                        pos.Y = (float)Math.Round(pos.Y + box.MinPos.Y) - box.MinPos.Y + 1e-4f;
+                        onGround = true; // 只有确定着地才标记
+                    }
                     velocity.Y = 0;
-                //result[1] = true;
-            }
-            if (IsInterSectInAxis(chunkMgr, Vector3.UnitZ, time))
-            {
-                //float zMove = velocity.Z * time;
-                //if (zMove > 0)
-                //{
-                //    float worldMaxZ = pos.Z + zMove + box.MaxPos.Z;
-                //    velocity.Z = ((float)Math.Floor(worldMaxZ) - box.MaxPos.Z - pos.Z) / time;
+                }
 
-                //}
-                //else if (zMove < 0)
-                //{
-                //    float worldMinZ = pos.Z + zMove + box.MinPos.Z;
-                //    velocity.Z = ((float)Math.Floor(worldMinZ) + 1 - box.MinPos.Z - pos.Z) / time;
-                //}
-                //else
+                // --- Z轴：同X轴逻辑 ---
+                Vector3 oldPosZ = pos;
+                pos.Z += velocity.Z * subTime;
+                if (IsInterSectInAxis(chunkMgr,pos))
+                {
+                    pos = oldPosZ;
+                    if (velocity.Z > 0)
+                        pos.Z = (float)Math.Round(pos.Z + box.MaxPos.Z) - box.MaxPos.Z - 1e-4f;
+                    else if (velocity.Z < 0)
+                        pos.Z = (float)Math.Round(pos.Z + box.MinPos.Z) - box.MinPos.Z + 1e-4f;
+
                     velocity.Z = 0;
-                //result[2] = true;
+                }
             }
-            return result;
         }
 
-        public bool IsInterSectInAxis(ChunkDataMgr chunkMgr,Vector3 axis,float time)
+        public bool IsInterSectInAxis(ChunkDataMgr chunkMgr,Vector3 position)
         {
-            Vector3 fv = pos + axis * velocity * time;
-            List<Vector3i> voxels = box.GetDetermin(fv);
+            List<Vector3i> voxels = box.GetDetermin(position);
 
             foreach(var voxel in voxels)
             {
