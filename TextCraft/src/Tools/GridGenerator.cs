@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.Core;
-using TextCraft.src.Core.ChunkModel;
+using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Rendering;
 using TextCraft.src.Table;

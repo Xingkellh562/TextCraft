@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.Core.Config;
 
-namespace TextCraft.src.Core.ChunkModel
+namespace TextCraft.src.Core.ChunkModule
 {
     public class ChunkDataMgr
     {

@@ -6,14 +6,11 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using TextCraft.src.Core.Config;
-using TextCraft.src.Core.ChunkModel;
-
-
 //using System.Threading;
 using TextCraft.src.Rendering;
 using TextCraft.src.Tools;
 
-namespace TextCraft.src.Core.ChunkModel
+namespace TextCraft.src.Core.ChunkModule
 {
 
     internal class ChunkUpdateMgr
@@ -69,6 +66,7 @@ namespace TextCraft.src.Core.ChunkModel
                     DeleteRanderChunk(result);
                 while (gridUpdateQueue.TryDequeue(out Vector3i result))
                     UpdateRanderChunk(result);
+
             }
         }
 

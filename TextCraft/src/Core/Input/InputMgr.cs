@@ -5,74 +5,61 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TextCraft.src.Core.ChunkModel;
+using System.Timers;
+using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Table;
 using TextCraft.src.Tools;
+using TextCraft.src.Core.Physic;
 
 
 namespace TextCraft.src.Core.Input
 {
     internal class InputMgr
     {
-        float _axisX = 0;
-        float _axisY = 0;
-        float _axisZ = 0;
-
-        const int Scale = 4;
-
-        public float pastMouseX = 400;
-        public float pastMouseY = 300;
-
-        public bool forward = false;
-        public bool back = false;
-        public bool left = false;
-        public bool right = false;
-        public bool up = false;
-        public bool down = false;
-
-        public int nowBlock = 1;
-
-        private float UpdateAxis(float time,float speed,ref float axis,bool positive,bool negative)
+        private float UpdateAxis(float time,float speed,ref float axis,bool positive,bool negative,InputComponent input)
         {
             if(axis != 0) axis += axis > 0 ? -2 * time:2 * time;
             if(MathF.Abs(axis) < time) axis = 0;
 
-            if (positive) axis += time * Scale;
-            if (negative) axis -= time * Scale;
+            if (positive) axis += time * input.Scale;
+            if (negative) axis -= time * input.Scale;
 
             axis = Math.Clamp(axis, -1, 1);
 
             return time * speed * axis;
         }
+        public Vector3 MoveUpdate(float time,float speed,Vector3 playerDir, ref InputComponent input) =>
+            (playerDir * new Vector3(1,0,1)).Normalized() * UpdateAxis(time, speed,ref input.axisZ, input.forward, input.back, input) 
+          +Vector3.Cross(playerDir, Vector3.UnitY).Normalized() * UpdateAxis(time,speed, ref input.axisX, input.right, input.left, input)
+          + Vector3.UnitY * UpdateAxis(time, speed, ref input.axisY, input.up, input.down, input);
 
-        public Vector3 MoveUpdate(float time,float speed,Vector3 playerDir) =>
-            (playerDir * new Vector3(1,0,1)).Normalized() * UpdateAxis(time, speed,ref _axisZ,forward,back) 
-          +Vector3.Cross(playerDir, Vector3.UnitY).Normalized() * UpdateAxis(time,speed, ref _axisX,right,left)
-          + Vector3.UnitY * UpdateAxis(time, speed, ref _axisY,up,down);
-
-        public Matrix4 MouseMoveX(float sensitivity, float mouseX)
+        public Matrix4 MouseMoveX(float sensitivity, ref InputComponent input)
         {
             Vector3 arbitraryAxis = Vector3.UnitY;
-            float angleRad = MathHelper.DegreesToRadians(sensitivity * (pastMouseX - mouseX));
-            pastMouseX = mouseX;
+            float angleRad = MathHelper.DegreesToRadians(sensitivity * (input.pastMouseX - input.mouseX));
+            input.pastMouseX = input.mouseX;
             return Matrix4.CreateFromAxisAngle(arbitraryAxis, angleRad);
         }
-        public Matrix4 MouseMoveY(float sensitivity, float mouseY, Vector3 cameraDir)
+        public Matrix4 MouseMoveY(float sensitivity, Vector3 cameraDir, ref InputComponent input)
         {
             Vector3 arbitraryAxis = Vector3.Cross(cameraDir, Vector3.UnitY).Normalized();
-            float angleRad = MathHelper.DegreesToRadians(sensitivity * (pastMouseY - mouseY));
-            if (cameraDir.Y >= 0.99f && pastMouseY - mouseY > 0) angleRad = 0;
-            if (cameraDir.Y <= -0.99f && pastMouseY - mouseY < 0) angleRad = 0;
-            pastMouseY = mouseY;
+            float angleRad = MathHelper.DegreesToRadians(sensitivity * (input.pastMouseY - input.mouseY));
+            if (cameraDir.Y >= 0.99f && input.pastMouseY - input.mouseY > 0) angleRad = 0;
+            if (cameraDir.Y <= -0.99f && input.pastMouseY - input.mouseY < 0) angleRad = 0;
+            input.pastMouseY = input.mouseY;
             return Matrix4.CreateFromAxisAngle(arbitraryAxis, angleRad);
         }
 
-        public void LeftMouseButton(World world)
+        public void LeftMouseButton(World world,float time,ref InputComponent input)
         {
-            if(Radial.RaycastVoxel(world.chunkDataMgr,world.playerPos,world.playerDir,5,out Vector3i hitPos,out float hitDist,out Vector3i normal))
+            input.timer -= time/2;
+            input.timer = Math.Clamp(input.timer,0,input.interval);
+            if (input.destory && input.timer == 0 && Radial.RaycastVoxel(world.chunkDataMgr,world.playerPos,world.playerDir,5,out Vector3i hitPos,out float hitDist,out Vector3i normal))
             {
                 world.chunkDataMgr.SetBlock(hitPos.X,hitPos.Y,hitPos.Z,0);
+
+                input.timer = input.interval;
 
                 //函数内部会去除重复请求
                 Vector3i chunkPos = new Vector3i(
@@ -99,10 +86,14 @@ namespace TextCraft.src.Core.Input
             }
         }
 
-        public void RightMouseButton(World world)
+        public void RightMouseButton(World world, float time,Box box, ref InputComponent input)
         {
-            if (Radial.RaycastVoxel(world.chunkDataMgr, world.playerPos, world.playerDir, 5, out Vector3i hitPos, out float hitDist, out Vector3i normal))
+            input.timer -= time/2;
+            input.timer = Math.Clamp(input.timer, 0, input.interval);
+            if (input.build && input.timer == 0 && Radial.RaycastVoxel(world.chunkDataMgr, world.playerPos, world.playerDir, 5, out Vector3i hitPos, out float hitDist, out Vector3i normal))
             {
+                input.timer = input.interval;
+
                 hitPos -= normal;
                 if (BlockTable.Ins[world.chunkDataMgr.GetBlock(hitPos.X, hitPos.Y, hitPos.Z)].BlockType == BlockType.Solid&& BlockTable.Ins[world.chunkDataMgr.GetBlock(hitPos.X, hitPos.Y, hitPos.Z)].BlockType == BlockType.IncompleteBlock)
                     return;
@@ -115,11 +106,12 @@ namespace TextCraft.src.Core.Input
                 else if (normal.Z != 0)
                     dir = 2;
 
-                world.chunkDataMgr.SetBlock(hitPos.X, hitPos.Y, hitPos.Z, nowBlock * 16 + dir);
+                int pastBlock = world.chunkDataMgr.GetBlock(hitPos.X, hitPos.Y, hitPos.Z);
+                world.chunkDataMgr.SetBlock(hitPos.X, hitPos.Y, hitPos.Z, input.nowBlock * 16 + dir);
 
-                if (world.player.IsInterSectInAxis(world.chunkDataMgr,world.playerPos))
+                if (world.physicSystem.IsInterSectInAxis(world.chunkDataMgr, world.playerPos,box))
                 {
-                    world.chunkDataMgr.SetBlock(hitPos.X, hitPos.Y, hitPos.Z, 0);
+                    world.chunkDataMgr.SetBlock(hitPos.X, hitPos.Y, hitPos.Z, pastBlock);
                     return;
                 }
 

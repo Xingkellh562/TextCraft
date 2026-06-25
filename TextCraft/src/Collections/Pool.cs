@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using TextCraft.src.Core.ChunkModule;
 
 namespace TextCraft.src.Collections
 {
@@ -98,6 +99,12 @@ namespace TextCraft.src.Collections
             return false;
         }
 
+        public void ReleaseAndDispose()
+        {
+            if (TryRelease(out var value))
+                TryDispose(value);
+        }
+
         /// <summary>
         /// 从池中获取一个对象（如果池为空且提供了工厂，则通过工厂创建；否则失败）
         /// </summary>
@@ -163,5 +170,6 @@ namespace TextCraft.src.Collections
             if (obj is IDisposable disposable)
                 disposable.Dispose();
         }
+
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.Collections;
 using TextCraft.src.Core.Config;
-using TextCraft.src.Core.ChunkModel;
+using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Rendering;
 
 namespace TextCraft.src.Core

@@ -1,13 +1,16 @@
 ﻿using OpenTK;
+using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using System.Runtime;
+using TextCraft.src.Core.EntityModule;
+using TextCraft.src.Core.Input;
+using TextCraft.src.Core.Physic;
 using TextCraft.src.Rendering;
 using TextCraft.src.Tools;
-using OpenTK.Graphics;
-using System.Runtime;
 
 namespace TextCraft.src.Core
 {
@@ -47,7 +50,9 @@ namespace TextCraft.src.Core
         {
             base.OnRenderFrame(args);
             //渲染
+
             renderer.GetCamera(world.playerPos, world.playerDir);
+            
             renderer.Draw();
 
             SwapBuffers();
@@ -59,9 +64,9 @@ namespace TextCraft.src.Core
 
             world.Update((float)UpdateTime);
 
-            Console.Clear();
-            Console.WriteLine("FPS: " + 1 / UpdateTime);
-            Console.WriteLine("Time: " + (int)world.GameTime);
+            //Console.Clear();
+            //Console.WriteLine("FPS: " + 1 / UpdateTime);
+            //Console.WriteLine("Time: " + (int)world.GameTime);
         }
         protected override void OnResize(ResizeEventArgs e)
         {
@@ -81,60 +86,102 @@ namespace TextCraft.src.Core
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             base.OnKeyDown(e);
-            if (e.Key == Keys.W) world.inputMgr.forward = true;
-            if (e.Key == Keys.S) world.inputMgr.back = true;
-            if (e.Key == Keys.A) world.inputMgr.left = true;
-            if (e.Key == Keys.D) world.inputMgr.right = true;
-            if (e.Key == Keys.Space) 
-            { 
-                world.inputMgr.up = true;
-                if(world.player.onGround)
-                    world.player.velocity += Vector3.UnitY *15;
+            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] {typeof(InputComponent)}))
+            {
+                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                if (e.Key == Keys.W) input.forward = true;
+                if (e.Key == Keys.S) input.back = true;
+                if (e.Key == Keys.A) input.left = true;
+                if (e.Key == Keys.D) input.right = true;
+                if (e.Key == Keys.Space) input.up = true;
+                if (e.Key == Keys.LeftShift) input.down = true;
+                if (e.Key == Keys.F12) GC.Collect();
+
+                world.ecsMgr.AddComponent(entity, input);
             }
-            if (e.Key == Keys.LeftShift) world.inputMgr.down = true;
-            if (e.Key == Keys.F12) GC.Collect();
+            
         }
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             base.OnKeyUp(e);
-            if (e.Key == Keys.W) world.inputMgr.forward = false;
-            if (e.Key == Keys.S) world.inputMgr.back = false;
-            if (e.Key == Keys.A) world.inputMgr.left = false;
-            if (e.Key == Keys.D) world.inputMgr.right = false;
-            if (e.Key == Keys.Space) world.inputMgr.up = false;
-            if (e.Key == Keys.LeftShift) world.inputMgr.down = false;
+            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            {
+                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                if (e.Key == Keys.W) input.forward = false;
+                if (e.Key == Keys.S) input.back = false;
+                if (e.Key == Keys.A) input.left = false;
+                if (e.Key == Keys.D) input.right = false;
+                if (e.Key == Keys.Space) input.up = false;
+                if (e.Key == Keys.LeftShift) input.down = false;
+
+                world.ecsMgr.AddComponent(entity, input);
+            }
         }
 
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
             base.OnMouseMove(e);
-            Vector4 move = new Vector4(world.playerDir, 0) * world.inputMgr.MouseMoveX(0.5f, e.X);
-            move *= world.inputMgr.MouseMoveY(0.5f, e.Y, world.playerDir);
-            world.playerDir = new Vector3(move.X,move.Y,move.Z);
+            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            {
+                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                input.mouseX = e.X;
+                input.mouseY = e.Y;
+                world.ecsMgr.AddComponent(entity, input);
+            }
+            //Vector4 move = new Vector4(world.playerDir, 0) * world.inputMgr.MouseMoveX(0.5f, e.X);
+            //move *= world.inputMgr.MouseMoveY(0.5f, e.Y, world.playerDir);
+            //world.playerDir = new Vector3(move.X,move.Y,move.Z);
         }
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
-            if (e.Button == MouseButton.Left)
-                world.inputMgr.LeftMouseButton(world);
-            if (e.Button == MouseButton.Right)
-                world.inputMgr.RightMouseButton(world);
+            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            {
+                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+
+                if (e.Button == MouseButton.Left) input.destory = true;
+                if (e.Button == MouseButton.Right) input.build = true;
+
+                world.ecsMgr.AddComponent(entity, input);
+            }
+        }
+
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            {
+                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+
+                if (e.Button == MouseButton.Left) input.destory = false;
+                if (e.Button == MouseButton.Right) input.build = false;
+
+                world.ecsMgr.AddComponent(entity, input);
+            }
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
-            if (e.OffsetY > 0)
+            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
             {
-                world.inputMgr.nowBlock -= 1;
-                world.inputMgr.nowBlock = Math.Clamp(world.inputMgr.nowBlock, 1, 9);
+                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+
+                if (e.OffsetY > 0)
+                {
+                    input.nowBlock -= 1;
+                    input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
+                }
+                else if (e.OffsetY < 0)
+                {
+                    input.nowBlock += 1;
+                    input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
+                }
+
+                world.ecsMgr.AddComponent(entity, input);
             }
-            else if (e.OffsetY < 0)
-            {
-                world.inputMgr.nowBlock += 1;
-                world.inputMgr.nowBlock = Math.Clamp(world.inputMgr.nowBlock, 1, 9);
-            }
+            
         }
     }
 }

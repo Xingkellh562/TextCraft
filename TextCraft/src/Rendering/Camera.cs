@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TextCraft.src.Core.Physic
+namespace TextCraft.src.Rendering
 {
-    internal class PhysicUpdater
+    internal struct Camera
     {
+        //这是一个摄像机ECS组件,目前只是一个标志位
     }
 }

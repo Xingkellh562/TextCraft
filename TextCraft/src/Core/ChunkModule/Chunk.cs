@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TextCraft.src.Core.ChunkModel
+namespace TextCraft.src.Core.ChunkModule
 {
     public class Chunk(Vector3i size) : IDisposable
     {

@@ -82,6 +82,11 @@ namespace TextCraft.src.Rendering
                 shader.GetGrid(grid);
                 shader.Draw();
             }
+            foreach (var grid in world.gridMgr.grids["Entity"].Values)
+            {
+                shader.GetGrid(grid);
+                shader.Draw();
+            }
             List<Grid> grids = world.gridMgr.grids["lucency"].Values.ToList<Grid>();
             grids.Sort((a,b) => -(a.Pos-cameraPos).Length.CompareTo((b.Pos - cameraPos).Length));
             GL.Disable(EnableCap.CullFace);

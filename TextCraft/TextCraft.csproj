@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="src\Core\Entity\" />
     <Folder Include="src\UI\" />
   </ItemGroup>
 
