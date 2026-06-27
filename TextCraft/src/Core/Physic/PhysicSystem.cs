@@ -23,10 +23,19 @@ namespace TextCraft.src.Core.Physic
                 var box = world.ecsMgr.GetComponent<Box>(entity);
 
                 body.velocity += body.acceleration * time;
-                body.velocity -= body.damp * body.velocity;
 
                 if (body.useGravity)
-                    body.acceleration.Y = -9.8f * 4;
+                {
+                    body.damp = new Vector3(0.25f, 0.05f, 0.25f);
+                    body.acceleration.Y = -9.8f * 8;
+                }
+                else
+                {
+                    body.damp = new Vector3(0.05f, 0.05f, 0.05f);
+                    body.acceleration.Y = 0;
+                }
+
+                body.velocity -= new Vector3(body.damp.X * body.velocity.X, body.damp.Y * body.velocity.Y, body.damp.Z * body.velocity.Z);
 
                 CollisionDetection(world.chunkDataMgr,time,ref body,box,ref trans);
 

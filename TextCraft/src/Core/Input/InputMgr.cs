@@ -19,8 +19,8 @@ namespace TextCraft.src.Core.Input
     {
         private float UpdateAxis(float time,float speed,ref float axis,bool positive,bool negative,InputComponent input)
         {
-            if(axis != 0) axis += axis > 0 ? -2 * time:2 * time;
-            if(MathF.Abs(axis) < time) axis = 0;
+            if(axis != 0) axis += axis > 0 ? -8 * time:8 * time;
+            if(MathF.Abs(axis) < 0.1) axis = 0;
 
             if (positive) axis += time * input.Scale;
             if (negative) axis -= time * input.Scale;
@@ -29,10 +29,10 @@ namespace TextCraft.src.Core.Input
 
             return time * speed * axis;
         }
-        public Vector3 MoveUpdate(float time,float speed,Vector3 playerDir, ref InputComponent input) =>
+        public Vector3 MoveUpdate(float time,float speed,Vector3 playerDir, bool useGravity, ref InputComponent input) =>
             (playerDir * new Vector3(1,0,1)).Normalized() * UpdateAxis(time, speed,ref input.axisZ, input.forward, input.back, input) 
           +Vector3.Cross(playerDir, Vector3.UnitY).Normalized() * UpdateAxis(time,speed, ref input.axisX, input.right, input.left, input)
-          + Vector3.UnitY * UpdateAxis(time, speed, ref input.axisY, input.up, input.down, input);
+          + (!useGravity ? Vector3.UnitY * UpdateAxis(time, speed, ref input.axisY, input.up, input.down, input) : Vector3.Zero);
 
         public Matrix4 MouseMoveX(float sensitivity, ref InputComponent input)
         {
@@ -68,9 +68,7 @@ namespace TextCraft.src.Core.Input
                     (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.worldConfig.ChunkSizeZ)
                     );
 
-                world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
-
-                if(hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == 0)
+                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitX);
                 if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitY);
@@ -83,6 +81,7 @@ namespace TextCraft.src.Core.Input
                 if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == ConfigMgr.Ins.worldConfig.ChunkSizeZ - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitZ);
 
+                world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
             }
         }
 
@@ -121,9 +120,6 @@ namespace TextCraft.src.Core.Input
                     (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.worldConfig.ChunkSizeZ)
                     );
 
-                
-                world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
-
                 if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitX);
                 if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == 0)
@@ -137,6 +133,7 @@ namespace TextCraft.src.Core.Input
                 if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == ConfigMgr.Ins.worldConfig.ChunkSizeZ - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitZ);
 
+                world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
             }
         }
     }

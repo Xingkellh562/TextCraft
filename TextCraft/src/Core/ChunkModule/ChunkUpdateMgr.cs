@@ -17,7 +17,7 @@ namespace TextCraft.src.Core.ChunkModule
     {
         ChunkDataMgr _chunkMgr;
         GridMgr _gridMgr;
-        TerrainGenerator terrainGenerator = new TerrainGenerator(91919191);
+        TerrainGenerator terrainGenerator;
 
         Thread updateThread;
 
@@ -27,6 +27,10 @@ namespace TextCraft.src.Core.ChunkModule
         public ConcurrentQueue<Vector3i> gridDeleteQueue = new ConcurrentQueue<Vector3i>();
         public ConcurrentQueue<Vector3i> gridUpdateQueue = new ConcurrentQueue<Vector3i>();
 
+        public ConcurrentQueue<Vector3i> chunkCreateFinishQueue = new ConcurrentQueue<Vector3i>();
+        public ConcurrentQueue<Vector3i> chunkDeleteFinishQueue = new ConcurrentQueue<Vector3i>();
+        public ConcurrentQueue<Vector3i> gridCreateFinishQueue = new ConcurrentQueue<Vector3i>();
+        public ConcurrentQueue<Vector3i> gridDeleteFinishQueue = new ConcurrentQueue<Vector3i>();
         public ConcurrentQueue<Vector3i> gridUpdateFinishQueue = new ConcurrentQueue<Vector3i>();
 
         private HashSet<Vector3i> chunkCreateRequest = new HashSet<Vector3i>();
@@ -35,16 +39,18 @@ namespace TextCraft.src.Core.ChunkModule
         private HashSet<Vector3i> gridDeleteRequest = new HashSet<Vector3i>();
         private HashSet<Vector3i> gridUpdateRequest = new HashSet<Vector3i>();
 
-        public ChunkUpdateMgr(ChunkDataMgr chunkMgr, GridMgr gridMgr)
+        public ChunkUpdateMgr(ChunkDataMgr chunkMgr, GridMgr gridMgr, int seed = 91919191)
         {
             _chunkMgr = chunkMgr;
             _gridMgr = gridMgr;
+            terrainGenerator = new TerrainGenerator(seed);
             updateThread = new Thread(Update);
         }
 
 
         public void StartChunkUpdate()
         {
+            updateThread.IsBackground = true;
             updateThread.Start();
         }
 
@@ -83,13 +89,15 @@ namespace TextCraft.src.Core.ChunkModule
 
             _chunkMgr.AddChunk(chunkPos, chunk);
 
-            
+            chunkCreateFinishQueue.Enqueue(chunkPos);
         }
 
         private void DeleteChunk(Vector3i chunkPos)
         {
             //在函数内部入池
             _chunkMgr.TryRemoveChunk(chunkPos);
+
+            chunkDeleteFinishQueue.Enqueue(chunkPos);
             
         }
 
@@ -104,14 +112,19 @@ namespace TextCraft.src.Core.ChunkModule
                     Pools.Ins.gridPool.Enter(grids[1]);
                 grids = null;
             }
-                
+            gridCreateFinishQueue.Enqueue(chunkPos);
         }
         private void UpdateRanderChunk(Vector3i chunkPos)
         {
             gridUpdateFinishQueue.Enqueue(chunkPos);
-            Grid grid = _gridMgr.grids["default"][chunkPos];
 
-            if(!_gridMgr.grids["lucency"].TryGetValue(chunkPos , out var grid2))
+            if(!_gridMgr.grids["default"].TryGetValue(chunkPos,out var grid))
+            {
+                if (!Pools.Ins.gridPool.TryTake(out grid))
+                    grid = new Grid();
+                _gridMgr.AddChunkGrids("default", chunkPos, grid);
+            }
+            if (!_gridMgr.grids["lucency"].TryGetValue(chunkPos , out var grid2))
             {
                 if(!Pools.Ins.gridPool.TryTake(out grid2))
                     grid2 = new Grid();
@@ -130,6 +143,8 @@ namespace TextCraft.src.Core.ChunkModule
         {
             _gridMgr.RemoveChunkGrids("default", chunkPos);
             _gridMgr.RemoveChunkGrids("lucency", chunkPos);
+
+            gridDeleteFinishQueue.Enqueue(chunkPos);
         }
 
         public void CommitChunkUpdateRequest(Vector3i chunkPos)
@@ -141,8 +156,6 @@ namespace TextCraft.src.Core.ChunkModule
                 chunkCreateRequest.Add(chunkPos);
                 chunkCreateQueue.Enqueue(chunkPos);
             }
-            if(hasChunk)
-                chunkCreateRequest.Remove(chunkPos);
         }
 
         public void CommitChunkDeleteRequest(Vector3i chunkPos)
@@ -154,8 +167,6 @@ namespace TextCraft.src.Core.ChunkModule
                 chunkDeleteRequest.Add(chunkPos);
                 chunkDeleteQueue.Enqueue(chunkPos);
             } 
-            if(!hasChunk)
-                chunkDeleteRequest.Remove(chunkPos);
         }
 
         public void CommitGridCommitRequest(Vector3i chunkPos)
@@ -167,15 +178,12 @@ namespace TextCraft.src.Core.ChunkModule
                 gridCommitRequest.Add(chunkPos);
                 gridCommitQueue.Enqueue(chunkPos);
             }
-            if(hasGrid)
-                gridCommitRequest.Remove(chunkPos);
         }
 
         public void CommitGridUpdateRequest(Vector3i chunkPos)
         {
-            bool hasGrid = _gridMgr.grids["default"].ContainsKey(chunkPos) || _gridMgr.grids["lucency"].ContainsKey(chunkPos);
             bool hasRequest = gridUpdateRequest.Contains(chunkPos);
-            if (hasGrid && !hasRequest)
+            if (!hasRequest)
             {
                 gridUpdateRequest.Add(chunkPos);
                 gridUpdateQueue.Enqueue(chunkPos);
@@ -191,14 +199,12 @@ namespace TextCraft.src.Core.ChunkModule
                 gridDeleteRequest.Add(chunkPos);
                 gridDeleteQueue.Enqueue(chunkPos);
             }
-            if(!hasGrid)
-                gridDeleteRequest.Remove(chunkPos);
         }
 
-        public void RemoveGridUpdateRequest(Vector3i chunkPos)
-        {
-            gridUpdateRequest.Remove(chunkPos);
-        }
-    
+        public void RemoveChunkCreateRequest(Vector3i chunkPos) => chunkCreateRequest.Remove(chunkPos);
+        public void RemoveGridUpdateRequest(Vector3i chunkPos) => gridUpdateRequest.Remove(chunkPos);
+        public void RemoveChunkDeleteRequest(Vector3i chunkPos) => chunkDeleteRequest.Remove(chunkPos);
+        public void RemoveGridCreateRequest(Vector3i chunkPos) => gridCommitRequest.Remove(chunkPos);
+        public void RemoveGridDeleteRequest(Vector3i chunkPos) => gridDeleteRequest.Remove(chunkPos);
     }    
 }

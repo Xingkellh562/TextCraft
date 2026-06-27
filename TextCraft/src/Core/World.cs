@@ -22,8 +22,8 @@ namespace TextCraft.src.Core
         public ChunkDataMgr chunkDataMgr = new ChunkDataMgr();
         public ChunkUpdateMgr chunkUpdateMgr;
 
-        public Vector3 playerPos = new Vector3(0, 90, 0);
-        public Vector3 playerDir = new Vector3(0, 0, 1);
+        public Vector3 playerPos = new Vector3();
+        public Vector3 playerDir = new Vector3();
 
         public InputMgr inputMgr = new InputMgr();
 
@@ -33,11 +33,14 @@ namespace TextCraft.src.Core
 
         public ModelRenderMgr modelRenderMgr = new ModelRenderMgr();
 
-        public float GameTime = 0;
-        public World() 
-        {
-            chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr);
+        private int _seed = 0;
+        public int Seed => _seed;
 
+        public float GameTime = 0;
+        public World(int seed = 0) 
+        {
+            _seed = seed;
+            chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr,seed);
         }
 
         public void Load()
@@ -49,8 +52,8 @@ namespace TextCraft.src.Core
             chunkUpdateMgr.StartChunkUpdate();
             LoadPlayer();
 
-            AddEntity(new Vector3(0, 90, 5), 1);
-            AddEntity(new Vector3(0, 90, 6), 2);
+            //AddEntity(new Vector3(0, 90, 5), 1);
+            //AddEntity(new Vector3(0, 90, 6), 2);
         }
         public void Update(float updateTime)
         {
@@ -63,7 +66,24 @@ namespace TextCraft.src.Core
                 var body = ecsMgr.GetComponent<RigidBody>(entity);
                 var box = ecsMgr.GetComponent<Box>(entity);
 
-                body.velocity += inputMgr.MoveUpdate(updateTime, 36, trans.rotation, ref input);
+                if(body.useGravity)
+                    body.velocity += inputMgr.MoveUpdate(updateTime, 128, trans.rotation,body.useGravity, ref input);
+                else
+                    body.velocity += inputMgr.MoveUpdate(updateTime, 36, trans.rotation, body.useGravity, ref input);
+
+                if (body.onGround && body.useGravity && input.up)
+                    body.velocity.Y += 16;
+
+                input.spaceTimer -= updateTime;
+                input.spaceTimer = Math.Clamp(input.spaceTimer,0,input.spaceInterval);
+
+                if (input.spaceTimer == 0)
+                    input.spacePress = 0;
+                if (input.spacePress >= 2)
+                {
+                    body.useGravity = !body.useGravity;
+                    input.spaceTimer = 0;
+                }
 
                 Vector4 move = new Vector4(trans.rotation, 0) * inputMgr.MouseMoveX(0.5f,ref input);
                 move *= inputMgr.MouseMoveY(0.5f, trans.rotation, ref input);
@@ -74,10 +94,10 @@ namespace TextCraft.src.Core
 
                 if (chunkDataMgr.GetBlock((int)trans.position.X, (int)trans.position.Y - 1, (int)trans.position.Z) == 144)
                 {
-                    body.damp = 0.25f;
+                    body.damp = new Vector3(0.25f, 0.25f, 0.25f);
                     body.onGround = true;
                 }
-                else body.damp = 0.05f;
+                else body.damp = new Vector3(0.05f, 0.05f, 0.05f);
 
                 ecsMgr.AddComponent(entity, trans);
                 ecsMgr.AddComponent(entity, input);
@@ -106,7 +126,7 @@ namespace TextCraft.src.Core
                 ConfigMgr.Ins.worldConfig.ChunkSizeX,
                 ConfigMgr.Ins.worldConfig.ChunkSizeY,
                 ConfigMgr.Ins.worldConfig.ChunkSizeZ
-                ), 0, 5*32, 7*32);
+                ), 0, 13*16, 8*32);
 
             foreach (var chunkPos in list[0])
             {
@@ -124,13 +144,22 @@ namespace TextCraft.src.Core
             foreach (var chunkPos in chunkDataMgr.Chunks.Keys)
             {
                 Vector3 Pos = new Vector3(chunkPos.X * chunkSize.X, chunkPos.Y * chunkSize.Y, chunkPos.Z * chunkSize.Z);
-                if ((Pos - playerPos).Length > 8 * 32)
+                if ((Pos - playerPos).Length > 9 * 32)
                     chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
-                if((Pos - playerPos).Length > 6 * 32)
+                if((Pos - playerPos).Length > 15 * 16)
                     chunkUpdateMgr.CommitGridDeleteRequest(chunkPos);
             }
             while (chunkUpdateMgr.gridUpdateFinishQueue.TryDequeue(out Vector3i result))
                 chunkUpdateMgr.RemoveGridUpdateRequest(result);
+            while (chunkUpdateMgr.chunkCreateFinishQueue.TryDequeue(out Vector3i result))
+                chunkUpdateMgr.RemoveChunkCreateRequest(result);
+            while (chunkUpdateMgr.chunkDeleteFinishQueue.TryDequeue(out Vector3i result))
+                chunkUpdateMgr.RemoveChunkDeleteRequest(result);
+            while (chunkUpdateMgr.gridCreateFinishQueue.TryDequeue(out Vector3i result))
+                chunkUpdateMgr.RemoveGridCreateRequest(result);
+            while (chunkUpdateMgr.gridDeleteFinishQueue.TryDequeue(out Vector3i result))
+                chunkUpdateMgr.RemoveGridDeleteRequest(result);
+
 
 
         }
@@ -138,7 +167,7 @@ namespace TextCraft.src.Core
         void LoadPlayer()
         {
             EntityObject entityObject = new EntityObject() { name = "player", type = EntityType.living };
-            Transform playerTrans = new Transform() { position = new Vector3(0, 90, 0), rotation = new Vector3(0, 0, 1) };
+            Transform playerTrans = new Transform() { position = new Vector3(0, 90,0), rotation = new Vector3(0, 0, 1) };
             RigidBody body = new RigidBody(50);
             Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
             Camera camera = new Camera();

@@ -11,7 +11,6 @@ using System.Threading.Tasks.Sources;
 using TextCraft.src.Core;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Tools;
-using ImGuiNET;
 
 namespace TextCraft.src.Rendering
 {
@@ -50,19 +49,20 @@ namespace TextCraft.src.Rendering
             shader.LoadTexture(AppContext.BaseDirectory + "Resources\\blockatlas1.png");
 
             //启用一些设置
-            GL.Enable(EnableCap.DepthTest);
+            
             GL.DepthFunc(DepthFunction.Lequal);
 
             GL.Enable(EnableCap.CullFace);
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
-            GL.ClearColor(ClearColor.X, ClearColor.Y, ClearColor.Z, 1.0f);
         }
         public void Draw()
         {
             Clear();
+
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthMask(true);
 
             shader.GetMatrix(cameraPos, cameraDir, _size);
 

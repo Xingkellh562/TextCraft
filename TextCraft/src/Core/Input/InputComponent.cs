@@ -12,7 +12,7 @@ namespace TextCraft.src.Core.Input
         public float axisY = 0;
         public float axisZ = 0;
 
-        public readonly int Scale = 4;
+        public readonly int Scale = 16;
 
         public float pastMouseX = 400;
         public float pastMouseY = 300;
@@ -34,6 +34,10 @@ namespace TextCraft.src.Core.Input
         public float interval = 0.2f;
         public float timer = 0;
 
+        public int spacePress = 0;
+
+        public float spaceInterval = 0.3f;
+        public float spaceTimer = 0; 
 
         public InputComponent()
         {

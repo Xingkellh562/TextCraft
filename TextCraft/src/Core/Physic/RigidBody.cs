@@ -16,7 +16,7 @@ namespace TextCraft.src.Core.Physic
         public float Mass => _mass;
         public Vector3 velocity;
         public Vector3 acceleration;
-        public float damp = 0.05f;
+        public Vector3 damp = new Vector3(0.05f, 0.05f, 0.05f);
 
         public bool onGround;
         public bool useGravity;

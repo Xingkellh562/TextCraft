@@ -49,7 +49,7 @@ namespace TextCraft.src.Rendering
 
             if (vertices == null)
                 vertices = new float[] { };
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float) , vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float) , vertices, BufferUsageHint.DynamicDraw);
 
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);

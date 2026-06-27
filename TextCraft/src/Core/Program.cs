@@ -17,9 +17,9 @@ namespace TextCraft.src.Core
     internal class Game : GameWindow
     {
         IRenderer renderer;
+        IRenderer uIRenderer;
 
-        World world = new World();
-
+        World world;
         public Game(int width,int height,string title) : base(GameWindowSettings.Default,
             new NativeWindowSettings
             { 
@@ -32,28 +32,40 @@ namespace TextCraft.src.Core
             
         {
             VSync = VSyncMode.On;
+            uIRenderer = new UIRenderer();
+
+            Console.Write("输入种子:");
+            try
+            {
+                int seed = int.Parse(Console.ReadLine());
+                world = new World(seed);
+            }
+            catch
+            {
+                world = new World(0);
+            }
+            
             renderer = new GameRenderer(world);
+            CursorState = CursorState.Grabbed;
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
-            CursorState = CursorState.Grabbed;
 
             renderer.Load();
+            uIRenderer.Load();
 
             world.Load();
-
         }
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
             //渲染
-
             renderer.GetCamera(world.playerPos, world.playerDir);
-            
             renderer.Draw();
+            uIRenderer.Draw();
 
             SwapBuffers();
         }
@@ -64,15 +76,16 @@ namespace TextCraft.src.Core
 
             world.Update((float)UpdateTime);
 
-            //Console.Clear();
-            //Console.WriteLine("FPS: " + 1 / UpdateTime);
-            //Console.WriteLine("Time: " + (int)world.GameTime);
+            Console.Clear();
+            Console.WriteLine("FPS: " + 1 / UpdateTime);
+            Console.WriteLine("Time: " + (int)world.GameTime);
         }
         protected override void OnResize(ResizeEventArgs e)
         {
             base.OnResize(e);
             GL.Viewport(0, 0, Size.X, Size.Y);
             renderer.OnSizeChange(Size);
+            uIRenderer.OnSizeChange(Size);
         }
 
         static void Main(string[] args)
@@ -86,6 +99,11 @@ namespace TextCraft.src.Core
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             base.OnKeyDown(e);
+            if(e.Key == Keys.Escape)
+            {
+                if (CursorState == CursorState.Grabbed) CursorState = CursorState.Normal;
+                else if (CursorState != CursorState.Grabbed) CursorState = CursorState.Grabbed;
+            }
             foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] {typeof(InputComponent)}))
             {
                 var input = world.ecsMgr.GetComponent<InputComponent>(entity);
@@ -93,15 +111,19 @@ namespace TextCraft.src.Core
                 if (e.Key == Keys.S) input.back = true;
                 if (e.Key == Keys.A) input.left = true;
                 if (e.Key == Keys.D) input.right = true;
-                if (e.Key == Keys.Space) input.up = true;
+                if (e.Key == Keys.Space) {
+                    if (input.spaceTimer == 0)
+                        input.spaceTimer = input.spaceInterval;
+                    if (input.spaceTimer > 0 && !input.up)
+                        input.spacePress += 1;
+                    input.up = true;
+                }
                 if (e.Key == Keys.LeftShift) input.down = true;
                 if (e.Key == Keys.F12) GC.Collect();
-
                 world.ecsMgr.AddComponent(entity, input);
             }
             
         }
-
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             base.OnKeyUp(e);
@@ -112,26 +134,27 @@ namespace TextCraft.src.Core
                 if (e.Key == Keys.S) input.back = false;
                 if (e.Key == Keys.A) input.left = false;
                 if (e.Key == Keys.D) input.right = false;
-                if (e.Key == Keys.Space) input.up = false;
+                if (e.Key == Keys.Space) {
+                    input.up = false;
+                } 
                 if (e.Key == Keys.LeftShift) input.down = false;
 
                 world.ecsMgr.AddComponent(entity, input);
             }
         }
-
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
             base.OnMouseMove(e);
-            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            if(CursorState == CursorState.Grabbed)
             {
-                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
-                input.mouseX = e.X;
-                input.mouseY = e.Y;
-                world.ecsMgr.AddComponent(entity, input);
+                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                {
+                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                    input.mouseX = e.X;
+                    input.mouseY = e.Y;
+                    world.ecsMgr.AddComponent(entity, input);
+                }
             }
-            //Vector4 move = new Vector4(world.playerDir, 0) * world.inputMgr.MouseMoveX(0.5f, e.X);
-            //move *= world.inputMgr.MouseMoveY(0.5f, e.Y, world.playerDir);
-            //world.playerDir = new Vector3(move.X,move.Y,move.Z);
         }
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -146,7 +169,6 @@ namespace TextCraft.src.Core
                 world.ecsMgr.AddComponent(entity, input);
             }
         }
-
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
@@ -160,7 +182,6 @@ namespace TextCraft.src.Core
                 world.ecsMgr.AddComponent(entity, input);
             }
         }
-
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
