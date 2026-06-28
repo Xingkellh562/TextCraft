@@ -46,10 +46,10 @@ namespace TextCraft.src.Rendering
         {
             shader.CreateShaderProgram();
 
-            shader.LoadTexture(AppContext.BaseDirectory + "Resources\\blockatlas1.png");
+            shader.Load(AppContext.BaseDirectory + "Resources\\blockatlas1.png",new TextureLoader());
 
             //启用一些设置
-            
+
             GL.DepthFunc(DepthFunction.Lequal);
 
             GL.Enable(EnableCap.CullFace);
@@ -59,7 +59,7 @@ namespace TextCraft.src.Rendering
         }
         public void Draw()
         {
-            Clear();
+            //Clear();
 
             GL.Enable(EnableCap.DepthTest);
             GL.DepthMask(true);

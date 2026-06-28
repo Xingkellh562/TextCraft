@@ -28,12 +28,14 @@ namespace TextCraft.src.Rendering
 
         public bool AddChunkGrids(string layer,Vector3 pos,Grid grid)
         {
+            if(!grids.ContainsKey(layer)) return false;
             return grids[layer].TryAdd(pos, grid);
         }
 
         public void RemoveChunkGrids(string layer, Vector3 pos)
         {
-            if(grids[layer].TryRemove(pos,out var grid))
+            if (!grids.ContainsKey(layer)) return;
+            if (grids[layer].TryRemove(pos,out var grid))
             {
                 grid.ResetForPool();
                 Pools.Ins.gridPool.Enter(grid);

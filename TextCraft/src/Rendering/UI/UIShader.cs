@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TextCraft.src.Rendering
+namespace TextCraft.src.Rendering.UI
 {
     internal class UIShader : BaseShader
     {
@@ -24,7 +24,7 @@ namespace TextCraft.src.Rendering
 
             void main()
             {
-                gl_Position = projection *  vec4(aPos,-0.1 ,1.0); // projection * 
+                gl_Position = projection *  vec4(aPos,-0.1 ,1.0);
                 TexCoord = aTexCoord;
             }";
         //片段着色器
@@ -33,12 +33,12 @@ namespace TextCraft.src.Rendering
             in vec2 TexCoord;
             out vec4 FragColor;
 
-            uniform sampler2D ourTexture;
+            uniform sampler2D uiTexture;
             uniform vec4 uColor;
 
             void main()
             {
-                FragColor = texture(ourTexture,TexCoord);
+                FragColor = texture(uiTexture,TexCoord);
             }";
 
         public void GetMatrix(Vector2i size)
@@ -47,8 +47,6 @@ namespace TextCraft.src.Rendering
             Matrix4.CreateOrthographicOffCenter(0,size.X, size.Y, 0,-1,1,out var _projectionMatrix);
             int location = GL.GetUniformLocation(_program, "projection");
             GL.UniformMatrix4(location, false, ref _projectionMatrix);
-
-
         }
 
         public void GetVertices()
@@ -64,12 +62,12 @@ namespace TextCraft.src.Rendering
                 //0,0,0,0,
                 //0,0.5f,0,0,
                 //0.5f,0.5f,0,0
-                100,100,0,0,
-                400,100,0.0625f,0,
-                400,300,0.0625f,0.0625f,
-                100,100,0,0,
-                400,300,0.0625f,0.0625f,
-                100,300,0,0.0625f,
+                0,0,0,0,
+                400,0,0.0625f,0,
+                400,400,0.0625f,0.0625f,
+                0,0,0,0,
+                400,400,0.0625f,0.0625f,
+                0,400,0,0.0625f,
             };
 
             _vertexCount = vertices.Length;
@@ -84,12 +82,22 @@ namespace TextCraft.src.Rendering
             GL.EnableVertexAttribArray(1);
         }
 
+        public void GetRectMesh(UIRectMesh mesh) 
+        {
+            if (!mesh.isLoad)
+                mesh.GetVertexObject();
+
+            GetVertices(mesh.vao, mesh.vbo, mesh.vertices.Length);
+        }
+
         public override void Draw()
         {
             GL.UseProgram(_program);
 
-            int textureLocation = GL.GetUniformLocation(_program, "ourTexture");
-            GL.Uniform1(textureLocation, 0);
+            Bind(TextureUnit.Texture1);
+
+            int textureLocation = GL.GetUniformLocation(_program, "uiTexture");
+            GL.Uniform1(textureLocation, 1);
 
             Vector4 color = new Vector4(1, 0, 0, 1);
             int colorLoc = GL.GetUniformLocation(_program, "uColor");

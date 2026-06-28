@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<SixLaborsLicenseFile>$(USERPROFILE)/.sixlabors/license.lic</SixLaborsLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,10 +19,6 @@
     <Reference Include="SixLabors.ImageSharp">
       <HintPath>C:\Users\Xingkellh\.nuget\packages\sixlabors.imagesharp\4.0.0\lib\net8.0\SixLabors.ImageSharp.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="src\UI\" />
   </ItemGroup>
 
 </Project>

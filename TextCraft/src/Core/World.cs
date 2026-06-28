@@ -16,7 +16,7 @@ using TextCraft.src.Tools;
 
 namespace TextCraft.src.Core
 {
-    internal class World
+    internal class World : IDisposable
     {
         public GridMgr gridMgr = new GridMgr();
         public ChunkDataMgr chunkDataMgr = new ChunkDataMgr();
@@ -32,6 +32,9 @@ namespace TextCraft.src.Core
         public PhysicSystem physicSystem = new PhysicSystem();
 
         public ModelRenderMgr modelRenderMgr = new ModelRenderMgr();
+
+        private bool _disposed = false;
+
 
         private int _seed = 0;
         public int Seed => _seed;
@@ -54,6 +57,11 @@ namespace TextCraft.src.Core
 
             //AddEntity(new Vector3(0, 90, 5), 1);
             //AddEntity(new Vector3(0, 90, 6), 2);
+        }
+
+        public void UnLoad()
+        {
+            Dispose(true);
         }
         public void Update(float updateTime)
         {
@@ -126,29 +134,49 @@ namespace TextCraft.src.Core
                 ConfigMgr.Ins.worldConfig.ChunkSizeX,
                 ConfigMgr.Ins.worldConfig.ChunkSizeY,
                 ConfigMgr.Ins.worldConfig.ChunkSizeZ
-                ), 0, 13*16, 8*32);
+                ), 0, 7*32 + 16);
 
             foreach (var chunkPos in list[0])
             {
                 chunkUpdateMgr.CommitChunkUpdateRequest(chunkPos);
+            }
 
-                chunkUpdateMgr.CommitGridCommitRequest(chunkPos);
-            }
-            foreach (var chunkPos in list[1])
-            {
-                chunkUpdateMgr.CommitChunkUpdateRequest(chunkPos);
-            }
             Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX,
                                 ConfigMgr.Ins.worldConfig.ChunkSizeY,
                                 ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+
+            Vector3i[] nei = {
+                    Vector3i.UnitX,
+                    Vector3i.UnitY,
+                    Vector3i.UnitZ,
+                    -Vector3i.UnitX,
+                    -Vector3i.UnitY,
+                    -Vector3i.UnitZ,
+                };
+
             foreach (var chunkPos in chunkDataMgr.Chunks.Keys)
             {
-                Vector3 Pos = new Vector3(chunkPos.X * chunkSize.X, chunkPos.Y * chunkSize.Y, chunkPos.Z * chunkSize.Z);
-                if ((Pos - playerPos).Length > 9 * 32)
+
+                Vector3 Pos = new Vector3(chunkPos.X * chunkSize.X + chunkSize.X / 2,
+                                          chunkPos.Y * chunkSize.Y + chunkSize.Y / 2,
+                                          chunkPos.Z * chunkSize.Z + chunkSize.Z / 2);
+                bool commitRequest = true;
+                for (int i = 0;i<nei.Length;i++)
+                    if (!chunkDataMgr.Chunks.ContainsKey(chunkPos + nei[i]))
+                    {
+                        commitRequest = false;
+                        break;
+                    }
+
+                if (commitRequest) chunkUpdateMgr.CommitGridCommitRequest(chunkPos);
+                else chunkUpdateMgr.CommitGridDeleteRequest(chunkPos);
+
+                if ((Pos - playerPos).Length > 8 * 32)
                     chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
-                if((Pos - playerPos).Length > 15 * 16)
-                    chunkUpdateMgr.CommitGridDeleteRequest(chunkPos);
+                    
             }
+
+
             while (chunkUpdateMgr.gridUpdateFinishQueue.TryDequeue(out Vector3i result))
                 chunkUpdateMgr.RemoveGridUpdateRequest(result);
             while (chunkUpdateMgr.chunkCreateFinishQueue.TryDequeue(out Vector3i result))
@@ -159,10 +187,7 @@ namespace TextCraft.src.Core
                 chunkUpdateMgr.RemoveGridCreateRequest(result);
             while (chunkUpdateMgr.gridDeleteFinishQueue.TryDequeue(out Vector3i result))
                 chunkUpdateMgr.RemoveGridDeleteRequest(result);
-
-
-
-        }
+        }     
 
         void LoadPlayer()
         {
@@ -194,6 +219,50 @@ namespace TextCraft.src.Core
                 }
                     
             return new Grid() { vertices = vertices.ToArray()};
+        }
+
+       
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this); 
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+
+                chunkUpdateMgr?.StopChunkUpdate();
+                if (gridMgr != null)
+                {
+                    foreach (var grids in gridMgr.grids.Values)
+                    {
+                        foreach (var grid in grids.Values)
+                        {
+                            grid?.Dispose();
+                        }
+                    }
+                    gridMgr.grids.Clear();
+                }
+                if (chunkDataMgr != null)
+                {
+                    foreach (var chunk in chunkDataMgr.Chunks.Values)
+                    {
+                        chunk?.Dispose();
+                    }
+                    chunkDataMgr?.Chunks.Clear();
+                }
+                
+                Pools.Ins.chunkPool.Clear();
+                Pools.Ins.gridPool.Clear();
+            }
+
+            GC.Collect();
+
+            _disposed = true;
         }
 
         void AddEntity(Vector3 pos,int id)

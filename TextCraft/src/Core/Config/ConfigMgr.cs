@@ -13,6 +13,7 @@ namespace TextCraft.src.Core.Config
         public readonly GraphicConfig graphicConfig = new GraphicConfig();
     }
 
+
     public class BaseConfig { }
 
 

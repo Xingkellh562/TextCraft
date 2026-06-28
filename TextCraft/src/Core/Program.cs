@@ -1,25 +1,33 @@
 ﻿using OpenTK;
+using OpenTK.Compute.OpenCL;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using System.Collections.Concurrent;
 using System.Runtime;
 using TextCraft.src.Core.EntityModule;
 using TextCraft.src.Core.Input;
 using TextCraft.src.Core.Physic;
 using TextCraft.src.Rendering;
+using TextCraft.src.Rendering.UI;
 using TextCraft.src.Tools;
+using TextCraft.src.UI;
 
 namespace TextCraft.src.Core
 {
+    public enum GameState{ MainMenu,InGame}
     internal class Game : GameWindow
     {
-        IRenderer renderer;
-        IRenderer uIRenderer;
+        int _seed = 0;
+        public GameState _state = GameState.MainMenu;
+        GameSession session = new GameSession();
+        UIMgr uIMgr = new UIMgr();
 
-        World world;
+        ConcurrentQueue<string> _commandQueue = new();
+
         public Game(int width,int height,string title) : base(GameWindowSettings.Default,
             new NativeWindowSettings
             { 
@@ -32,40 +40,69 @@ namespace TextCraft.src.Core
             
         {
             VSync = VSyncMode.On;
-            uIRenderer = new UIRenderer();
-
-            Console.Write("输入种子:");
-            try
-            {
-                int seed = int.Parse(Console.ReadLine());
-                world = new World(seed);
-            }
-            catch
-            {
-                world = new World(0);
-            }
-            
-            renderer = new GameRenderer(world);
-            CursorState = CursorState.Grabbed;
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
+            uIMgr.Load();
 
-            renderer.Load();
-            uIRenderer.Load();
+            uIMgr.gamePanel.Sleep();
+            uIMgr.mainMenuPanel.Wake();
 
-            world.Load();
+            Task.Run(async () => {
+                while (true)
+                {
+                    // ReadLine 本身是阻塞的，但它阻塞的是这个子线程，不是你的游戏主线程！
+                    string command = await Console.In.ReadLineAsync();
+                    if (command != null)
+                    {
+                        // 将命令放入一个线程安全的队列，在主线程 Update 里去处理
+                        _commandQueue.Enqueue(command);
+                    }
+                }
+            });
+        }
+
+        public void SwitchState(GameState state)
+        {
+            if(_state == GameState.InGame && session.IsLoad)
+            {
+                session.UnLoadWorld();
+                Console.WriteLine("正在卸载世界中");
+            }
+
+            _state = state;
+
+            if (state == GameState.MainMenu)
+            {
+                uIMgr.gamePanel.Sleep();
+                uIMgr.mainMenuPanel.Wake();
+            }
+            else
+            {
+                uIMgr.gamePanel.Wake();
+                uIMgr.mainMenuPanel.Sleep();
+            }
+        }
+
+        public void OnLoadWorld()
+        {
+            SwitchState(GameState.InGame);
+            Console.WriteLine("正在创建世界中");
+            CursorState = CursorState.Grabbed;
+            session.LoadWorld(_seed);
         }
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             //渲染
-            renderer.GetCamera(world.playerPos, world.playerDir);
-            renderer.Draw();
-            uIRenderer.Draw();
+            //renderer.GetCamera(world.playerPos, world.playerDir);
+            //renderer.Draw();
+            session.Render();
+            uIMgr.Render();
 
             SwapBuffers();
         }
@@ -74,18 +111,41 @@ namespace TextCraft.src.Core
         {
             base.OnUpdateFrame(args);
 
-            world.Update((float)UpdateTime);
+            session.Update((float)UpdateTime);
 
-            Console.Clear();
-            Console.WriteLine("FPS: " + 1 / UpdateTime);
-            Console.WriteLine("Time: " + (int)world.GameTime);
+            if(_commandQueue.TryDequeue(out var command))
+            {
+                string[] s = command.Split();
+                if(s.Length == 2 && s[0] == "/LoadWorld")
+                {
+                    _seed = int.Parse(s[1]);
+
+                    Console.WriteLine("准备创建世界");
+
+                    OnLoadWorld();
+
+                    session.GameRender?.OnSizeChange(Size);
+                    uIMgr.UiRender?.OnSizeChange(Size);
+                    //this.WindowState = WindowState.Fullscreen;
+                }
+                else if (s.Length == 1 && s[0] == "/UnLoadWorld")
+                {
+                    Console.WriteLine("准备卸载世界");
+                    SwitchState(GameState.MainMenu);
+                }
+            }
+
+            //Console.Clear();
+            //Console.WriteLine("FPS: " + 1 / UpdateTime);
+            //Console.WriteLine("Time: " + session.World != null ? (int)session.World.GameTime:0);
         }
         protected override void OnResize(ResizeEventArgs e)
         {
             base.OnResize(e);
             GL.Viewport(0, 0, Size.X, Size.Y);
-            renderer.OnSizeChange(Size);
-            uIRenderer.OnSizeChange(Size);
+            //renderer.OnSizeChange(Size);
+            session.GameRender?.OnSizeChange(Size);
+            uIMgr.UiRender?.OnSizeChange(Size);
         }
 
         static void Main(string[] args)
@@ -99,108 +159,133 @@ namespace TextCraft.src.Core
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             base.OnKeyDown(e);
-            if(e.Key == Keys.Escape)
+            if (session.IsLoad && session.World != null)
             {
-                if (CursorState == CursorState.Grabbed) CursorState = CursorState.Normal;
-                else if (CursorState != CursorState.Grabbed) CursorState = CursorState.Grabbed;
-            }
-            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] {typeof(InputComponent)}))
-            {
-                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
-                if (e.Key == Keys.W) input.forward = true;
-                if (e.Key == Keys.S) input.back = true;
-                if (e.Key == Keys.A) input.left = true;
-                if (e.Key == Keys.D) input.right = true;
-                if (e.Key == Keys.Space) {
-                    if (input.spaceTimer == 0)
-                        input.spaceTimer = input.spaceInterval;
-                    if (input.spaceTimer > 0 && !input.up)
-                        input.spacePress += 1;
-                    input.up = true;
+                World world = session.World;
+                if (e.Key == Keys.Escape)
+                {
+                    if (CursorState == CursorState.Grabbed) CursorState = CursorState.Normal;
+                    else if (CursorState != CursorState.Grabbed) CursorState = CursorState.Grabbed;
                 }
-                if (e.Key == Keys.LeftShift) input.down = true;
-                if (e.Key == Keys.F12) GC.Collect();
-                world.ecsMgr.AddComponent(entity, input);
+                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                {
+                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                    if (e.Key == Keys.W) input.forward = true;
+                    if (e.Key == Keys.S) input.back = true;
+                    if (e.Key == Keys.A) input.left = true;
+                    if (e.Key == Keys.D) input.right = true;
+                    if (e.Key == Keys.Space)
+                    {
+                        if (input.spaceTimer == 0)
+                            input.spaceTimer = input.spaceInterval;
+                        if (input.spaceTimer > 0 && !input.up)
+                            input.spacePress += 1;
+                        input.up = true;
+                    }
+                    if (e.Key == Keys.LeftShift) input.down = true;
+                    if (e.Key == Keys.F12) GC.Collect();
+                    world.ecsMgr.AddComponent(entity, input);
+                }
             }
-            
         }
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             base.OnKeyUp(e);
-            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            if (session.IsLoad && session.World != null)
             {
-                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
-                if (e.Key == Keys.W) input.forward = false;
-                if (e.Key == Keys.S) input.back = false;
-                if (e.Key == Keys.A) input.left = false;
-                if (e.Key == Keys.D) input.right = false;
-                if (e.Key == Keys.Space) {
-                    input.up = false;
-                } 
-                if (e.Key == Keys.LeftShift) input.down = false;
+                World world = session.World;
+                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                {
+                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                    if (e.Key == Keys.W) input.forward = false;
+                    if (e.Key == Keys.S) input.back = false;
+                    if (e.Key == Keys.A) input.left = false;
+                    if (e.Key == Keys.D) input.right = false;
+                    if (e.Key == Keys.Space)
+                    {
+                        input.up = false;
+                    }
+                    if (e.Key == Keys.LeftShift) input.down = false;
 
-                world.ecsMgr.AddComponent(entity, input);
+                    world.ecsMgr.AddComponent(entity, input);
+                }
             }
         }
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
             base.OnMouseMove(e);
-            if(CursorState == CursorState.Grabbed)
+            if (session.IsLoad && session.World != null)
             {
-                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                World world = session.World;
+                if (CursorState == CursorState.Grabbed)
                 {
-                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
-                    input.mouseX = e.X;
-                    input.mouseY = e.Y;
-                    world.ecsMgr.AddComponent(entity, input);
+                    foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                    {
+                        var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                        input.mouseX = e.X;
+                        input.mouseY = e.Y;
+                        world.ecsMgr.AddComponent(entity, input);
+                    }
                 }
             }
         }
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
-            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            if (session.IsLoad && session.World != null)
             {
-                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                World world = session.World;
+                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                {
+                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
 
-                if (e.Button == MouseButton.Left) input.destory = true;
-                if (e.Button == MouseButton.Right) input.build = true;
+                    if (e.Button == MouseButton.Left) input.destory = true;
+                    if (e.Button == MouseButton.Right) input.build = true;
 
-                world.ecsMgr.AddComponent(entity, input);
+                    world.ecsMgr.AddComponent(entity, input);
+                }
             }
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
-            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            if (session.IsLoad && session.World != null)
             {
-                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
+                World world = session.World;
+                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+                {
+                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
 
-                if (e.Button == MouseButton.Left) input.destory = false;
-                if (e.Button == MouseButton.Right) input.build = false;
+                    if (e.Button == MouseButton.Left) input.destory = false;
+                    if (e.Button == MouseButton.Right) input.build = false;
 
-                world.ecsMgr.AddComponent(entity, input);
+                    world.ecsMgr.AddComponent(entity, input);
+                }
             }
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
-            foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
+            if (session.IsLoad && session.World != null)
             {
-                var input = world.ecsMgr.GetComponent<InputComponent>(entity);
-
-                if (e.OffsetY > 0)
+                World world = session.World;
+                foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
                 {
-                    input.nowBlock -= 1;
-                    input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
-                }
-                else if (e.OffsetY < 0)
-                {
-                    input.nowBlock += 1;
-                    input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
-                }
+                    var input = world.ecsMgr.GetComponent<InputComponent>(entity);
 
-                world.ecsMgr.AddComponent(entity, input);
+                    if (e.OffsetY > 0)
+                    {
+                        input.nowBlock -= 1;
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
+                    }
+                    else if (e.OffsetY < 0)
+                    {
+                        input.nowBlock += 1;
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
+                    }
+
+                    world.ecsMgr.AddComponent(entity, input);
+                }
             }
             
         }

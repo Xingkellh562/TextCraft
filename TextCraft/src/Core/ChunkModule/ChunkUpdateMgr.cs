@@ -19,6 +19,9 @@ namespace TextCraft.src.Core.ChunkModule
         GridMgr _gridMgr;
         TerrainGenerator terrainGenerator;
 
+        bool _chunkUpdateRuning = false;
+        object _lock = new object();
+
         Thread updateThread;
 
         public ConcurrentQueue<Vector3i> chunkCreateQueue = new ConcurrentQueue<Vector3i>();
@@ -51,28 +54,53 @@ namespace TextCraft.src.Core.ChunkModule
         public void StartChunkUpdate()
         {
             updateThread.IsBackground = true;
+            _chunkUpdateRuning = true;
             updateThread.Start();
         }
 
         public void StopChunkUpdate()
         {
-            
+            lock (_lock)
+            {
+                _chunkUpdateRuning = false;
+            }
+            chunkCreateQueue.Clear();
+            chunkDeleteQueue.Clear();
+            gridCommitQueue.Clear();
+            gridDeleteQueue.Clear();
+            gridUpdateQueue.Clear();
+
+            chunkCreateFinishQueue.Clear();
+            chunkDeleteFinishQueue.Clear();
+            gridCreateFinishQueue.Clear();
+            gridDeleteFinishQueue.Clear();
+            gridUpdateFinishQueue.Clear();
+
+            chunkCreateRequest.Clear();
+            chunkDeleteRequest.Clear();
+            gridCommitRequest.Clear();
+            gridDeleteRequest.Clear();
+            gridUpdateRequest.Clear();
         }
         public void Update()
         {
-            while (true)
+            bool chunkUpdateRuning;
+            lock (_lock)
             {
-                while (chunkCreateQueue.TryDequeue(out Vector3i result))
+                chunkUpdateRuning = _chunkUpdateRuning;
+            }
+            while (chunkUpdateRuning)
+            {
+                if (chunkCreateQueue.TryDequeue(out Vector3i result))
                     CreateChunk(result);
-                while (chunkDeleteQueue.TryDequeue(out Vector3i result))
+                if (chunkDeleteQueue.TryDequeue(out result))
                     DeleteChunk(result);
-                while (gridCommitQueue.TryDequeue(out Vector3i result))
+                if (gridCommitQueue.TryDequeue(out result))
                     CommitRanderChunk(result);
-                while (gridDeleteQueue.TryDequeue(out Vector3i result))
+                if (gridDeleteQueue.TryDequeue(out result))
                     DeleteRanderChunk(result);
-                while (gridUpdateQueue.TryDequeue(out Vector3i result))
+                if (gridUpdateQueue.TryDequeue(out result))
                     UpdateRanderChunk(result);
-
             }
         }
 
