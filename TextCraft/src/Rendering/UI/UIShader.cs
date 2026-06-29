@@ -24,7 +24,7 @@ namespace TextCraft.src.Rendering.UI
 
             void main()
             {
-                gl_Position = projection *  vec4(aPos,-0.1 ,1.0);
+                gl_Position = projection *  vec4(aPos,0 ,1.0);
                 TexCoord = aTexCoord;
             }";
         //片段着色器
@@ -34,17 +34,19 @@ namespace TextCraft.src.Rendering.UI
             out vec4 FragColor;
 
             uniform sampler2D uiTexture;
+            uniform vec2 picturSize;
             uniform vec4 uColor;
 
             void main()
             {
-                FragColor = texture(uiTexture,TexCoord);
+                vec2 trueTexCoord = vec2(TexCoord.x / picturSize.x,TexCoord.y / picturSize.y);
+                FragColor = texture(uiTexture,trueTexCoord);
             }";
 
         public void GetMatrix(Vector2i size)
         {
             GL.UseProgram(_program);
-            Matrix4.CreateOrthographicOffCenter(0,size.X, size.Y, 0,-1,1,out var _projectionMatrix);
+            Matrix4.CreateOrthographicOffCenter(0, size.X, size.Y, 0,-1,1,out var _projectionMatrix);
             int location = GL.GetUniformLocation(_program, "projection");
             GL.UniformMatrix4(location, false, ref _projectionMatrix);
         }
@@ -86,6 +88,8 @@ namespace TextCraft.src.Rendering.UI
         {
             if (!mesh.isLoad)
                 mesh.GetVertexObject();
+            if (!mesh.isUpdate)
+                mesh.UpdateVertices();
 
             GetVertices(mesh.vao, mesh.vbo, mesh.vertices.Length);
         }
@@ -102,6 +106,10 @@ namespace TextCraft.src.Rendering.UI
             Vector4 color = new Vector4(1, 0, 0, 1);
             int colorLoc = GL.GetUniformLocation(_program, "uColor");
             GL.Uniform4(colorLoc, color);
+
+            Vector2 size = new Vector2(_width, _height);
+            int sizeLoc = GL.GetUniformLocation(_program, "picturSize");
+            GL.Uniform2(sizeLoc, size);
 
             GL.Disable(EnableCap.CullFace);
 

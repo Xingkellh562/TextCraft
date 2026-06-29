@@ -26,18 +26,16 @@ namespace TextCraft.src.Rendering.UI
         {
             _shader.CreateShaderProgram();
 
-            _shader.Load(AppContext.BaseDirectory + "Resources\\ui\\sight.png",new Tools.TextureLoader());
+            _shader.Load(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png", new Tools.TextureLoader());
             //_shader.GetVertices();
         }
         public void Draw()
         {
-            
-            _shader.GetMatrix(_size);
-
             GL.Disable(EnableCap.DepthTest);
+            _shader.GetMatrix( _size);
 
             List<UIComponent> uiCs = new List<UIComponent>();
-            _uIMgr.components.Traverse(uiCs);
+            _uIMgr.uITable.components.Traverse(uiCs,false);
             foreach (var component in uiCs)
             {
                 _shader.GetRectMesh(component.rectMesh);

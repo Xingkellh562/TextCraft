@@ -10,7 +10,7 @@ namespace TextCraft.src.UI
 {
     public class UIComponent
     {
-        private bool _awake = false;
+        private bool _awake = true;
         public bool Awake => _awake;
 
         public Rect rect;
@@ -22,8 +22,7 @@ namespace TextCraft.src.UI
         public UIComponent(Rect rect)
         {
             this.rect = rect;
-
-            rectMesh = new UIRectMesh(Rect.GetVertices(rect));
+            rectMesh = new UIRectMesh(new float[] { });
         }
 
         public void AddSubComponent(UIComponent component)
@@ -32,14 +31,41 @@ namespace TextCraft.src.UI
             subObjects.Add(component);
         }
 
-        public void Traverse(List<UIComponent> result)
+        public void Traverse(List<UIComponent> result,bool allCompenents)
         {
-            if(_awake && result != null)
+            if ((_awake || allCompenents) && result != null)
             {
                 result.Add(this);
                 foreach (var obj in subObjects)
-                    obj.Traverse(result);
+                {
+                    obj.Traverse(result, allCompenents);
+                }
             }
+        }
+
+        public List<UIComponent> Traverse(bool allCompenents)
+        {
+            var result = new List<UIComponent>();
+            var stack = new Stack<UIComponent>();
+            stack.Push(this);
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (current._awake || allCompenents)   // 可按需控制条件
+                {
+                    result.Add(current);
+                    // 注意：逆序压栈以保持原顺序（若需要）
+                    for (int i = current.subObjects.Count - 1; i >= 0; i--)
+                        stack.Push(current.subObjects[i]);
+                }
+            }
+            return result;
+        }
+
+        public void SetSpirit(int[] spirit)
+        {
+            this.rect.spirit = (spirit.Clone() as int[]);
+            Anchor.GetPosWithAnchor(this);
         }
 
         public void Wake()

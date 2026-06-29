@@ -9,26 +9,24 @@ namespace TextCraft.src.UI
 {
     public class Rect
     {
-        public Vector2 pos;
-        public Vector2 size;
+        public Vector2i posA;
+        public Vector2i posB;
+        public Vector2i size;
 
         public Vector4 color;
         public float colorCoefficient;
 
-        public int[] spirit = new int[4] {0,0,1,1 };
+        public AnchorPoint UpperLeftPoint;
+        public AnchorPoint LowerRightPoint;
 
-        public static float[] GetVertices(Rect rect)
+        public int[]? spirit = new int[4] {0,0,1,1 };
+        public Rect() { }
+
+        public Rect(int left,int top,int width,int height)
         {
-            float[] vertices =
-            {
-                rect.pos.X              ,rect.pos.Y              ,rect.spirit[0],rect.spirit[1],
-                rect.pos.X + rect.size.X,rect.pos.Y              ,rect.spirit[2],rect.spirit[1],
-                rect.pos.X + rect.size.X,rect.pos.Y + rect.size.Y,rect.spirit[2],rect.spirit[3],
-                rect.pos.X              ,rect.pos.Y              ,rect.spirit[0],rect.spirit[1],
-                rect.pos.X + rect.size.X,rect.pos.Y + rect.size.Y,rect.spirit[2],rect.spirit[3],
-                rect.pos.X              ,rect.pos.Y + rect.size.Y,rect.spirit[0],rect.spirit[3],
-            };
-            return vertices;
+            posA = new Vector2i(left,top);
+            posB = new Vector2i(left+width,top + height);
+            size = new Vector2i(width,height);
         }
     }
 }

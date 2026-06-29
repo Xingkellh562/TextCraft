@@ -25,7 +25,7 @@ namespace TextCraft.src.Rendering
         protected int _shaderTexture;
         // 纹理ID，只生成一次
         public int Handle { get; private set; }
-        private int _width, _height;
+        protected int _width, _height;
         //顶点着色器
         protected abstract string VertexShaderSource { get; }
         //片段着色器

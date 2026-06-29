@@ -13,6 +13,7 @@ using TextCraft.src.Core.Input;
 using TextCraft.src.Core.Physic;
 using TextCraft.src.Rendering;
 using TextCraft.src.Rendering.UI;
+using TextCraft.src.Table;
 using TextCraft.src.Tools;
 using TextCraft.src.UI;
 
@@ -47,8 +48,11 @@ namespace TextCraft.src.Core
             base.OnLoad();
             uIMgr.Load();
 
-            uIMgr.gamePanel.Sleep();
-            uIMgr.mainMenuPanel.Wake();
+            uIMgr.uITable["gamePanel"].Sleep();
+            uIMgr.uITable["mainMenuPanel"].Wake();
+
+            Console.WriteLine("输入 /LoadWorld [seed] 加载世界");
+            Console.WriteLine("输入 /UnLoadWorld 卸载世界");
 
             Task.Run(async () => {
                 while (true)
@@ -76,14 +80,18 @@ namespace TextCraft.src.Core
 
             if (state == GameState.MainMenu)
             {
-                uIMgr.gamePanel.Sleep();
-                uIMgr.mainMenuPanel.Wake();
+                GL.ClearColor(0,0,0,0);
+                uIMgr.uITable["gamePanel"].Sleep();
+                uIMgr.uITable["mainMenuPanel"].Wake();
             }
             else
             {
-                uIMgr.gamePanel.Wake();
-                uIMgr.mainMenuPanel.Sleep();
+                uIMgr.uITable["gamePanel"].Wake();
+                uIMgr.uITable["mainMenuPanel"].Sleep();
             }
+
+            
+            uIMgr.uITable.OnSizeChange(Size);
         }
 
         public void OnLoadWorld()
@@ -125,7 +133,7 @@ namespace TextCraft.src.Core
                     OnLoadWorld();
 
                     session.GameRender?.OnSizeChange(Size);
-                    uIMgr.UiRender?.OnSizeChange(Size);
+
                     //this.WindowState = WindowState.Fullscreen;
                 }
                 else if (s.Length == 1 && s[0] == "/UnLoadWorld")
@@ -145,7 +153,7 @@ namespace TextCraft.src.Core
             GL.Viewport(0, 0, Size.X, Size.Y);
             //renderer.OnSizeChange(Size);
             session.GameRender?.OnSizeChange(Size);
-            uIMgr.UiRender?.OnSizeChange(Size);
+            uIMgr.OnSizeChange(Size);
         }
 
         static void Main(string[] args)
@@ -269,6 +277,7 @@ namespace TextCraft.src.Core
             if (session.IsLoad && session.World != null)
             {
                 World world = session.World;
+                int nowBlock = 1;
                 foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
                 {
                     var input = world.ecsMgr.GetComponent<InputComponent>(entity);
@@ -276,18 +285,18 @@ namespace TextCraft.src.Core
                     if (e.OffsetY > 0)
                     {
                         input.nowBlock -= 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 10);
                     }
                     else if (e.OffsetY < 0)
                     {
                         input.nowBlock += 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 9);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 10);
                     }
-
+                    nowBlock = input.nowBlock;
                     world.ecsMgr.AddComponent(entity, input);
                 }
+                uIMgr.uITable["displayBlock"].SetSpirit(SpiritTable.Ins.BlockSpirits[nowBlock]);
             }
-            
         }
     }
 }

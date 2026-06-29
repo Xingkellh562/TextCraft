@@ -72,7 +72,7 @@ namespace TextCraft.src.Rendering
         // 更新顶点数据（池化复用时不重新生成 VAO/VBO，只更新 Buffer）
         public void UpdateVertices()
         {
-            if (!isLoad) throw new InvalidOperationException("GPU资源未加载");
+            if (!isLoad) GetVertexObject();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float),
                           vertices, BufferUsageHint.DynamicDraw);

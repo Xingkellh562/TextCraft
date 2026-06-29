@@ -16,6 +16,7 @@ namespace TextCraft.src.Rendering.UI
         public int vbo;
 
         public bool isLoad = false;
+        public bool isUpdate = false;
 
         public UIRectMesh(float[] vertices)
         {
@@ -40,6 +41,16 @@ namespace TextCraft.src.Rendering.UI
             GL.EnableVertexAttribArray(1);
 
             isLoad = true;
+            isUpdate = true;
+        }
+
+        public void UpdateVertices()
+        {
+            if (!isLoad) GetVertexObject();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float),
+                          vertices, BufferUsageHint.DynamicDraw);
+            isUpdate = true;
         }
     }
 }

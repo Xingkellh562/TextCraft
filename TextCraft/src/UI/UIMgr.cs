@@ -12,28 +12,18 @@ namespace TextCraft.src.UI
 {
     internal class UIMgr
     {
-        public UIComponent components = new(new Rect());
         public IRenderer? UiRender { get; private set; }
-
-        public UIComponent gamePanel;
-        public UIComponent mainMenuPanel;
+        public UITable uITable { get; private set; }
 
         public UIMgr()
         {
             UiRender = new UIRenderer(this);
-
-            Rect gameRect = new Rect() { pos = new Vector2(398, 302),size = new Vector2(16,16)};
-            Rect menuRect = new Rect() { pos = new Vector2(20, 20), size = new Vector2(100, 100) };
-
-            gamePanel = new UIComponent(gameRect);
-            mainMenuPanel = new UIComponent(menuRect);
+            uITable = new UITable();
         }
         public void Load()
         {
             UiRender?.Load();
-            components.Wake();
-            components.AddSubComponent(gamePanel);
-            components.AddSubComponent(mainMenuPanel);
+            uITable?.LoadUI();
         }
 
         public void Render()
@@ -51,6 +41,10 @@ namespace TextCraft.src.UI
 
         }
 
-
+        public void OnSizeChange(Vector2i size)
+        {
+            UiRender?.OnSizeChange(size);
+            uITable.OnSizeChange(size);
+        }
     }
 }
