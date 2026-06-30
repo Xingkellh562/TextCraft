@@ -21,7 +21,7 @@ namespace TextCraft.src.Table
             _blockSpirits[7] = new int[] { 0, 16, 16, 32 };
             _blockSpirits[8] = new int[] { 0, 32, 16, 48 };
             _blockSpirits[9] = new int[] { 0, 48, 16, 64 };
-            _blockSpirits[10] = new int[] { 96, 16, 112, 32 };
+            _blockSpirits[10] = new int[] { 16, 32, 32, 48 };
         }
 
         private Dictionary<int, int[]> _blockSpirits = new();

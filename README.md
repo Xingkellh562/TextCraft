@@ -81,6 +81,10 @@ dotnet build --configuration Release
 4. **运行游戏**
  
 dotnet run --project TextCraft/TextCraft.csproj
+
+5. **注意事项**
+
+首次编译完成后，请将项目目录下的RequiredResources文件夹中的所有文件，全部复制到编译输出目录（如 bin\debug\net8.0）否则会应找不到资源文件而报错。
  
 🎮 **操作说明**
  

@@ -58,8 +58,7 @@ namespace TextCraft.src.Table
             AddBlock(8, 0, "glass", BlockType.IncompleteBlock, ModelCreator.CreateModel(ModelTable.cube, new int[] { 0 }, new int[] { 2 }), true);
 
             AddBlock(9, 0, "water", BlockType.Liquid, ModelCreator.CreateModel(ModelTable.cube15pxH, new int[] { 1,1,0,1,1,1 }, new int[] { 3 }),true);
-            AddBlock(10, 0, "iron", BlockType.Solid, ModelCreator.CreateModel(ModelTable.cube, new int[] { 6 }, new int[] { 1 }));
-            AddBlock(91, 0, "dick", BlockType.Solid, ModelCreator.CreateModel(ModelTable.cube, new int[] { 0 }, new int[] { 4 }));
+            AddBlock(10, 0, "leave", BlockType.Solid, ModelCreator.CreateModel(ModelTable.cube, new int[] { 1 }, new int[] { 2 }));
         }
 
         public void AddBlock(int id,int type,string name, BlockType blockType, QuadFace[] model,bool isLucency = false)

@@ -25,8 +25,15 @@ namespace TextCraft.src.Rendering.UI
         public void Load()
         {
             _shader.CreateShaderProgram();
-
-            _shader.Load(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png", new Tools.TextureLoader());
+            try
+            {
+                _shader.Load(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png", new Tools.TextureLoader());
+            }
+            catch
+            {
+                Console.WriteLine("无法找到资源文件，请确保已将项目目录下的RequiredResources文件夹中的所有文件全部复制到编译输出目录");
+            }
+            
             //_shader.GetVertices();
         }
         public void Draw()
