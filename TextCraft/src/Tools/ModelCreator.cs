@@ -18,6 +18,10 @@ namespace TextCraft.src.Tools
                 var face = new QuadFace(model.faces[i]);
                 for (int j = 3; j < model.faces[i].Length; j += 6)
                 {
+                    if (face.vertices[j] == 0.0f) face.vertices[j] += 0.375f;
+                    else face.vertices[j] -= 0.375f;
+                    if (face.vertices[j + 1] == 0.0f) face.vertices[j + 1] += 0.375f;
+                    else face.vertices[j + 1] -= 0.375f;
                     face.vertices[j] += i < u.Length ? u[i] : u[^1];
                     face.vertices[j+1] += i < v.Length ? v[i] : v[^1];
                 }

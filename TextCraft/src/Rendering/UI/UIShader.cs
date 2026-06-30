@@ -98,7 +98,7 @@ namespace TextCraft.src.Rendering.UI
         {
             GL.UseProgram(_program);
 
-            Bind(TextureUnit.Texture1);
+            atlas.Bind(TextureUnit.Texture1);
 
             int textureLocation = GL.GetUniformLocation(_program, "uiTexture");
             GL.Uniform1(textureLocation, 1);
@@ -107,7 +107,7 @@ namespace TextCraft.src.Rendering.UI
             int colorLoc = GL.GetUniformLocation(_program, "uColor");
             GL.Uniform4(colorLoc, color);
 
-            Vector2 size = new Vector2(_width, _height);
+            Vector2 size = new Vector2(atlas.Width,atlas.Height);
             int sizeLoc = GL.GetUniformLocation(_program, "picturSize");
             GL.Uniform2(sizeLoc, size);
 

@@ -27,7 +27,8 @@ namespace TextCraft.src.Rendering.UI
             _shader.CreateShaderProgram();
             try
             {
-                _shader.Load(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png", new Tools.TextureLoader());
+                
+                _shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png"), new Tools.TextureLoader());
             }
             catch
             {

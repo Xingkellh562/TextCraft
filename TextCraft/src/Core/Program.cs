@@ -37,6 +37,7 @@ namespace TextCraft.src.Core
                 APIVersion = new Version(3,3),
                 Profile = ContextProfile.Core,
                 Flags = ContextFlags.ForwardCompatible,
+                NumberOfSamples = 16,
             })
             
         {

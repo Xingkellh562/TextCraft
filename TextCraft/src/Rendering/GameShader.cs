@@ -97,7 +97,7 @@ namespace TextCraft.src.Rendering
         {
             GL.UseProgram(_program);
 
-            Bind(TextureUnit.Texture0);
+            atlas.Bind(TextureUnit.Texture0);
 
             int textureLocation = GL.GetUniformLocation(_program, "ourTexture");
             GL.Uniform1(textureLocation, 0);

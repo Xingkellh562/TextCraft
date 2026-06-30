@@ -120,6 +120,8 @@ namespace TextCraft.src.Core.Input
                     (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.worldConfig.ChunkSizeZ)
                     );
 
+                world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
+
                 if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitX);
                 if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == 0)
@@ -132,8 +134,6 @@ namespace TextCraft.src.Core.Input
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitY);
                 if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == ConfigMgr.Ins.worldConfig.ChunkSizeZ - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitZ);
-
-                world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
             }
         }
     }

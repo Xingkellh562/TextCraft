@@ -46,7 +46,7 @@ namespace TextCraft.src.Rendering
         {
             shader.CreateShaderProgram();
 
-            shader.Load(AppContext.BaseDirectory + "Resources\\blockatlas1.png",new TextureLoader());
+            shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\blockatlas1.png"),new TextureLoader(),16,16,24);
 
             //启用一些设置
 
@@ -62,6 +62,7 @@ namespace TextCraft.src.Rendering
             //Clear();
 
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Multisample);
             GL.DepthMask(true);
 
             shader.GetMatrix(cameraPos, cameraDir, _size);
