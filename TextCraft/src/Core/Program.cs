@@ -51,6 +51,8 @@ namespace TextCraft.src.Core
 
             uIMgr.uITable["gamePanel"].Sleep();
             uIMgr.uITable["mainMenuPanel"].Wake();
+            uIMgr.uITable["mainMenuText"].Wake();
+            
 
             Console.WriteLine("输入 /LoadWorld [seed] 加载世界");
             Console.WriteLine("输入 /UnLoadWorld 卸载世界");
@@ -59,7 +61,7 @@ namespace TextCraft.src.Core
                 while (true)
                 {
                     // ReadLine 本身是阻塞的，但它阻塞的是这个子线程，不是你的游戏主线程！
-                    string command = await Console.In.ReadLineAsync();
+                    string command = await Console.In.ReadLineAsync() ?? "";
                     if (command != null)
                     {
                         // 将命令放入一个线程安全的队列，在主线程 Update 里去处理
@@ -296,7 +298,7 @@ namespace TextCraft.src.Core
                     nowBlock = input.nowBlock;
                     world.ecsMgr.AddComponent(entity, input);
                 }
-                uIMgr.uITable["displayBlock"].SetSpirit(SpiritTable.Ins.BlockSpirits[nowBlock]);
+                (uIMgr.uITable["displayBlock"] as Spirit)?.SetSpirit(SpiritTable.Ins.BlockSpirits[nowBlock]);
             }
         }
     }

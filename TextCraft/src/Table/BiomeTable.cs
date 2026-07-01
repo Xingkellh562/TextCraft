@@ -55,7 +55,6 @@ namespace TextCraft.src.Table
         int _surfaceBlock = 0;
         int _soilBlock = 0;
         int _stoneBlock = 0;
-        int _range = 0;
 
         public Biome(){ }
 

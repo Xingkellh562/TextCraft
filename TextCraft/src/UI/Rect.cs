@@ -18,8 +18,6 @@ namespace TextCraft.src.UI
 
         public AnchorPoint UpperLeftPoint;
         public AnchorPoint LowerRightPoint;
-
-        public int[]? spirit = new int[4] {0,0,1,1 };
         public Rect() { }
 
         public Rect(int left,int top,int width,int height)

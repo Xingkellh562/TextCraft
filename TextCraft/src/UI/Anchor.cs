@@ -54,10 +54,16 @@ namespace TextCraft.src.UI
             }
 
             component.rect.size = posB - posA;
+            if(component is Spirit spiritComponent)
+            {
+                int[] spirit = spiritComponent.spirit ?? new int[4];
+                spiritComponent.GetVertices(posA, posB, spirit);
+            }
+            else if (component is Text text)
+            {
+                //text.ComposeAndGetTextMesh();
+            }
 
-            int[] spirit = component.rect.spirit ?? new int[4];
-            component.rectMesh.vertices = GetVertices(posA, posB, spirit);
-            component.rectMesh.isUpdate = false;
         }
 
         // 辅助方法：根据锚点类型返回相对于父容器的偏移量
@@ -76,20 +82,6 @@ namespace TextCraft.src.UI
                 case AnchorPoint.None:
                 default: return Vector2i.Zero;
             }
-        }
-
-        private static float[] GetVertices(Vector2i posA,Vector2i posB, int[] spirit)
-        {
-            float[] vertices =
-            {
-                posA.X ,posA.Y ,spirit[0] ,spirit[1],
-                posB.X ,posA.Y ,spirit[2] ,spirit[1],
-                posB.X ,posB.Y ,spirit[2] ,spirit[3],
-                posA.X ,posA.Y ,spirit[0] ,spirit[1],
-                posB.X ,posB.Y ,spirit[2] ,spirit[3],
-                posA.X ,posB.Y ,spirit[0] ,spirit[3],
-            };
-            return vertices;
         }
     }
 }

@@ -10,7 +10,7 @@ namespace TextCraft.src.Core.ChunkModule
     public class Chunk(Vector3i size) : IDisposable
     {
         private readonly Vector3i _size = size;
-        private int[] _blocks = new int[size.X * size.Y * size.Z];
+        private int[]? _blocks = new int[size.X * size.Y * size.Z];
         private bool _disposed = false;
 
         public int this[int x, int y, int z]
@@ -20,13 +20,17 @@ namespace TextCraft.src.Core.ChunkModule
         }
 
         public int GetBlock(int x, int y, int z)
-            => _blocks[x * _size.Y * _size.Z + y * _size.Z + z];
+            => _blocks != null ? _blocks[x * _size.Y * _size.Z + y * _size.Z + z] : 0;
 
         public int GetBlock(Vector3i pos)
             => GetBlock(pos.X, pos.Y, pos.Z);
 
         public void SetBlock(int x, int y, int z, int value)
-            => _blocks[x * _size.Y * _size.Z + y * _size.Z + z] = value;
+        {
+            if (_blocks != null) 
+                _blocks[x * _size.Y * _size.Z + y * _size.Z + z] = value;
+        }
+
 
         public void SetBlock(Vector3i pos, int value)
             => SetBlock(pos.X, pos.Y, pos.Z, value);

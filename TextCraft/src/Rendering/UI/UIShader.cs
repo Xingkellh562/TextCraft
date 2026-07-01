@@ -12,6 +12,7 @@ namespace TextCraft.src.Rendering.UI
 {
     internal class UIShader : BaseShader
     {
+        public bool isFont = false;
         //顶点着色器
         protected override string VertexShaderSource => @"
             #version 450 core
@@ -34,12 +35,13 @@ namespace TextCraft.src.Rendering.UI
             out vec4 FragColor;
 
             uniform sampler2D uiTexture;
-            uniform vec2 picturSize;
+
+            uniform vec2 pictureSize;
             uniform vec4 uColor;
 
             void main()
             {
-                vec2 trueTexCoord = vec2(TexCoord.x / picturSize.x,TexCoord.y / picturSize.y);
+                vec2 trueTexCoord = vec2(TexCoord.x / pictureSize.x,TexCoord.y / pictureSize.y);
                 FragColor = texture(uiTexture,trueTexCoord);
             }";
 
@@ -50,40 +52,6 @@ namespace TextCraft.src.Rendering.UI
             int location = GL.GetUniformLocation(_program, "projection");
             GL.UniformMatrix4(location, false, ref _projectionMatrix);
         }
-
-        public void GetVertices()
-        {
-            _vao = GL.GenVertexArray();
-            _vbo = GL.GenBuffer();
-
-            GL.BindVertexArray( _vao );
-            GL.BindBuffer(BufferTarget.ArrayBuffer,_vbo);
-
-            float[] vertices =
-            {
-                //0,0,0,0,
-                //0,0.5f,0,0,
-                //0.5f,0.5f,0,0
-                0,0,0,0,
-                400,0,0.0625f,0,
-                400,400,0.0625f,0.0625f,
-                0,0,0,0,
-                400,400,0.0625f,0.0625f,
-                0,400,0,0.0625f,
-            };
-
-            _vertexCount = vertices.Length;
-
-            GL.BufferData(BufferTarget.ArrayBuffer,vertices.Length * sizeof(float),IntPtr.Zero,BufferUsageHint.DynamicDraw);
-            GL.BufferSubData(BufferTarget.ArrayBuffer,IntPtr.Zero,vertices.Length * sizeof(float),vertices);
-
-            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), Vector2.SizeInBytes);
-            GL.EnableVertexAttribArray(1);
-        }
-
         public void GetRectMesh(UIRectMesh mesh) 
         {
             if (!mesh.isLoad)
@@ -94,11 +62,22 @@ namespace TextCraft.src.Rendering.UI
             GetVertices(mesh.vao, mesh.vbo, mesh.vertices.Length);
         }
 
+        public Texture font = new Texture();
         public override void Draw()
         {
             GL.UseProgram(_program);
-
-            atlas.Bind(TextureUnit.Texture1);
+            Vector2 size = new Vector2(1, 1);
+            if (isFont)
+            {
+                font.Bind(TextureUnit.Texture1);
+            }
+            else
+            {
+                size = new Vector2(atlas.Width, atlas.Height);
+                atlas.Bind(TextureUnit.Texture1);
+            }
+            int sizeLoc = GL.GetUniformLocation(_program, "pictureSize");
+            GL.Uniform2(sizeLoc, size);
 
             int textureLocation = GL.GetUniformLocation(_program, "uiTexture");
             GL.Uniform1(textureLocation, 1);
@@ -106,10 +85,6 @@ namespace TextCraft.src.Rendering.UI
             Vector4 color = new Vector4(1, 0, 0, 1);
             int colorLoc = GL.GetUniformLocation(_program, "uColor");
             GL.Uniform4(colorLoc, color);
-
-            Vector2 size = new Vector2(atlas.Width,atlas.Height);
-            int sizeLoc = GL.GetUniformLocation(_program, "picturSize");
-            GL.Uniform2(sizeLoc, size);
 
             GL.Disable(EnableCap.CullFace);
 

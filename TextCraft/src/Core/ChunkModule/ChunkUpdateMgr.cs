@@ -106,12 +106,17 @@ namespace TextCraft.src.Core.ChunkModule
 
         private void CreateChunk(Vector3i chunkPos)
         {
-            bool success = Pools.Ins.chunkPool.TryTake(out Chunk chunk);
-            if(!success) chunk = new Chunk(new Vector3i(
+            bool success = Pools.Ins.chunkPool.TryTake(out Chunk? chunk);
+
+            var size = new Vector3i(
             ConfigMgr.Ins.worldConfig.ChunkSizeX,
             ConfigMgr.Ins.worldConfig.ChunkSizeY,
             ConfigMgr.Ins.worldConfig.ChunkSizeZ
-            ));
+            );
+
+            if (!success) chunk = new Chunk(size);
+
+            chunk ??= new(size);
 
             chunk = terrainGenerator.BuildChunk(chunk, chunkPos);
 
@@ -134,11 +139,10 @@ namespace TextCraft.src.Core.ChunkModule
             if(GridGenerator.BuildGrid(_chunkMgr, chunkPos,2,out Grid[] grids))
             {
                 _gridMgr.AddChunkGrids("default", chunkPos, grids[0]);
-                if (grids[1].vertices.Length > 0)
+                if (grids[1].vertices?.Length > 0)
                     _gridMgr.AddChunkGrids("lucency", chunkPos, grids[1]);
                 else
                     Pools.Ins.gridPool.Enter(grids[1]);
-                grids = null;
             }
             gridCreateFinishQueue.Enqueue(chunkPos);
         }
@@ -150,19 +154,19 @@ namespace TextCraft.src.Core.ChunkModule
             {
                 if (!Pools.Ins.gridPool.TryTake(out grid))
                     grid = new Grid();
-                _gridMgr.AddChunkGrids("default", chunkPos, grid);
+                _gridMgr.AddChunkGrids("default", chunkPos, grid ?? new Grid());
             }
             if (!_gridMgr.grids["lucency"].TryGetValue(chunkPos , out var grid2))
             {
                 if(!Pools.Ins.gridPool.TryTake(out grid2))
                     grid2 = new Grid();
-                _gridMgr.AddChunkGrids("lucency",chunkPos, grid2);
+                _gridMgr.AddChunkGrids("lucency",chunkPos, grid2 ?? new Grid());
             }
                 
-            Grid[] grids = { grid, grid2 };
+            Grid[] grids = { grid ?? new Grid(), grid2 ?? new Grid() };
             GridGenerator.BuildGrid(_chunkMgr, chunkPos, ref grids);
 
-            if (!_gridMgr.grids["lucency"].ContainsKey(chunkPos) && grid2.vertices.Length == 0)
+            if (!_gridMgr.grids["lucency"].ContainsKey(chunkPos) && grid2?.vertices?.Length == 0)
                 grid2.Dispose();
 
         }

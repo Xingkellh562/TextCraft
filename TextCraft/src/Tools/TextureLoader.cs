@@ -72,9 +72,7 @@ namespace TextCraft.src.Tools
         private void FillPadding(Image<Rgba32> dst, Image<Rgba32> tile, int col, int row, int pad, int newTileW, int newTileH, int tileW, int tileH)
         {
             // 简便实现：用 Resize 将 tile 放大到 newTileW x newTileH，使用 NearestNeighbor 保持像素硬边
-            // 但这样会拉伸纹理，不适合，我们需要的是四周复制边缘。
-            // 手动复制边缘像素到 padding 区（略复杂）
-            // 推荐直接用 Clone + 边缘像素填充，这里给出高效思路：
+            // 手动复制边缘像素到 padding 区
             // 遍历 padding 区域，从原 tile 边缘取色
             int baseX = col * newTileW;
             int baseY = row * newTileH;

@@ -14,8 +14,8 @@ namespace TextCraft.src.Collections
         private readonly ConcurrentStack<T> _stack = new ConcurrentStack<T>();
         private readonly int _maxCapacity;
         private int _count;                         // 当前池中对象数量（原子操作）
-        private readonly Func<T> _factory;          // 对象工厂（可选）
-        private readonly Action<T> _resetAction;    // 对象重置回调（可选）
+        private readonly Func<T>? _factory;          // 对象工厂（可选）
+        private readonly Action<T>? _resetAction;    // 对象重置回调（可选）
         private bool _disposed;
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace TextCraft.src.Collections
         /// </summary>
         /// <param name="capacity">最大容量</param>
         public Pool(int capacity)
-            : this(capacity, null, null)
+            : this(capacity, null)
         {
         }
 
@@ -43,7 +43,7 @@ namespace TextCraft.src.Collections
         /// <param name="capacity">最大容量</param>
         /// <param name="factory">当池为空时创建新对象的工厂方法</param>
         /// <param name="resetAction">对象归还时重置其状态的回调（可为 null）</param>
-        public Pool(int capacity, Func<T> factory, Action<T> resetAction = null)
+        public Pool(int capacity, Func<T>? factory, Action<T>? resetAction = null)
         {
             if (capacity <= 0)
                 throw new ArgumentOutOfRangeException(nameof(capacity), "容量必须大于0");
@@ -84,7 +84,7 @@ namespace TextCraft.src.Collections
         /// </summary>
         /// <param name="result">取出的对象，失败时为 default(T)</param>
         /// <returns>是否成功取出对象</returns>
-        public bool TryRelease(out T result)
+        public bool TryRelease(out T? result)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(Pool<T>));
@@ -110,7 +110,7 @@ namespace TextCraft.src.Collections
         /// </summary>
         /// <param name="result">获取的对象</param>
         /// <returns>是否成功获取对象</returns>
-        public bool TryTake(out T result)
+        public bool TryTake(out T? result)
         {
             if (TryRelease(out result))
                 return true;
@@ -132,7 +132,7 @@ namespace TextCraft.src.Collections
         /// <exception cref="InvalidOperationException">池为空且未提供工厂</exception>
         public T Take()
         {
-            if (TryTake(out T result))
+            if (TryTake(out T? result) && result != null)
                 return result;
             throw new InvalidOperationException("池为空且未提供对象工厂。");
         }
@@ -147,7 +147,7 @@ namespace TextCraft.src.Collections
         /// </summary>
         public void Clear()
         {
-            while (_stack.TryPop(out T item))
+            while (_stack.TryPop(out T? item))
             {
                 Interlocked.Decrement(ref _count);
                 TryDispose(item);
@@ -165,7 +165,7 @@ namespace TextCraft.src.Collections
             Clear();
         }
 
-        private static void TryDispose(T obj)
+        private static void TryDispose(T? obj)
         {
             if (obj is IDisposable disposable)
                 disposable.Dispose();

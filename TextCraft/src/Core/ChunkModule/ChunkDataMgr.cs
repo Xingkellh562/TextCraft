@@ -32,7 +32,7 @@ namespace TextCraft.src.Core.ChunkModule
             return chunks.ContainsKey(chunkPos);
         }
 
-        public bool TryGetChunk(Vector3i chunkPos,out Chunk chunk)
+        public bool TryGetChunk(Vector3i chunkPos,out Chunk? chunk)
         {
             return chunks.TryGetValue(chunkPos, out chunk);
         }

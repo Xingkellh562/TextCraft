@@ -15,7 +15,7 @@ namespace TextCraft.src.Rendering
     }
     public class Grid:IDisposable
     {
-        public float[] vertices;
+        public float[]? vertices;
         Vector3 _position;
 
         public int vao;
@@ -60,7 +60,7 @@ namespace TextCraft.src.Rendering
             isLoad = true;
         }
 
-        public void ResetForPool(float[] newVertices = null, Vector3? newPos = null)
+        public void ResetForPool(float[]? newVertices = null, Vector3? newPos = null)
         {
             // 释放对旧托管数组的引用（帮助 GC，但数组不一定立即回收）
             this.vertices = newVertices ?? Array.Empty<float>();
@@ -73,6 +73,8 @@ namespace TextCraft.src.Rendering
         public void UpdateVertices()
         {
             if (!isLoad) GetVertexObject();
+            if (vertices == null) vertices = new float[]{ };
+            ;
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float),
                           vertices, BufferUsageHint.DynamicDraw);

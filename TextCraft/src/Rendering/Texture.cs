@@ -29,8 +29,6 @@ namespace TextCraft.src.Rendering
             Handle = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, Handle);
 
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapLinear);
@@ -39,9 +37,6 @@ namespace TextCraft.src.Rendering
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _width, _height, 0,
                           PixelFormat.Rgba, PixelType.UnsignedByte, _atlasData);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-
-            // 解绑防止误操作（可选）
-            GL.BindTexture(TextureTarget.Texture2D, 0);
         }
         public void Load(string location, TextureLoader loader,int cols,int rows,int padding)
         {
@@ -54,8 +49,6 @@ namespace TextCraft.src.Rendering
             Handle = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, Handle);
 
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapLinear);
@@ -64,9 +57,25 @@ namespace TextCraft.src.Rendering
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _width, _height, 0,
                           PixelFormat.Rgba, PixelType.UnsignedByte, _atlasData);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+        }
+        public void LoadFont()
+        {
+            _atlasData = FontLoader.Ins.PixelData;
+            _width = FontLoader.Ins.Width;
+            _height = FontLoader.Ins.Height;
 
-            // 解绑防止误操作（可选）
-            GL.BindTexture(TextureTarget.Texture2D, 0);
+            // 创建纹理并上传数据（只在此处调用 GenTexture）
+            Handle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, Handle);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _width, _height, 0,
+                          PixelFormat.Rgba, PixelType.UnsignedByte, _atlasData);
+
         }
         public void Bind(TextureUnit unit)
         {

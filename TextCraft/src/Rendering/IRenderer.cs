@@ -46,7 +46,7 @@ namespace TextCraft.src.Rendering
         {
             shader.CreateShaderProgram();
 
-            shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\blockatlas1.png"),new TextureLoader(),16,16,24);
+            shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\blockatlas1.png"),new TextureLoader(),16,16,56);
 
             //启用一些设置
 

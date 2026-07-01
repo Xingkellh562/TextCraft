@@ -116,6 +116,7 @@ namespace TextCraft.src.Rendering
             if (!g.isUpdate)
                 g.UpdateVertices();
 
+            if(g.vertices == null) g.vertices = new float[0];
             GetVertices(g.vao,g.vbo,g.vertices.Length);
             _chunkPosition = g.Pos;
         }

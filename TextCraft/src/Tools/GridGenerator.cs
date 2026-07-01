@@ -105,7 +105,8 @@ namespace TextCraft.src.Tools
                 bool success = Pools.Ins.gridPool.TryTake(out var grid);
                 if (!success) grid = new Grid();
 
-                grids[i] = grid;
+                if(grid != null)
+                    grids[i] = grid;
             }
             if(!GetVertices(chunkMgr,  pos, grids.Length, out var vertices))
                 return false;
@@ -153,8 +154,10 @@ namespace TextCraft.src.Tools
             for(int i = 0;i< vertices.Length;i++)
                 vertices[i] = new List<float> ();
 
-            if (!chunkMgr.TryGetChunk(pos, out Chunk chunk))
+            if (!chunkMgr.TryGetChunk(pos, out Chunk? chunk))
                 return false;
+
+            if(chunk == null) return false;
 
             for (int x = 0; x < chunkSize.X; x++)
                 for (int y = 0; y < chunkSize.Y; y++)
