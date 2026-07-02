@@ -6,9 +6,13 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using SixLabors.ImageSharp.Drawing;
 using System.Collections.Concurrent;
 using System.Runtime;
+using TextCraft.src.Core.Config;
+using TextCraft.src.Core.ConsoleModule;
 using TextCraft.src.Core.EntityModule;
+using TextCraft.src.Core.Event;
 using TextCraft.src.Core.Input;
 using TextCraft.src.Core.Physic;
 using TextCraft.src.Rendering;
@@ -19,15 +23,15 @@ using TextCraft.src.UI;
 
 namespace TextCraft.src.Core
 {
-    public enum GameState{ MainMenu,InGame}
+    
     internal class Game : GameWindow
     {
         int _seed = 0;
-        public GameState _state = GameState.MainMenu;
-        GameSession session = new GameSession();
-        UIMgr uIMgr = new UIMgr();
-
-        ConcurrentQueue<string> _commandQueue = new();
+        
+        public GameSession session = new GameSession();
+        public UIMgr uIMgr = new UIMgr();
+        public GameStateMgr gameStateMgr;
+        public ConsoleMgr consoleMgr = new ConsoleMgr();
 
         public Game(int width,int height,string title) : base(GameWindowSettings.Default,
             new NativeWindowSettings
@@ -42,111 +46,71 @@ namespace TextCraft.src.Core
             
         {
             VSync = VSyncMode.On;
+            gameStateMgr = new(this);
+            EventMgr.Ins.Subscribe(typeof(LoadWorldEventArg),arg => OnLoadWorld(arg as LoadWorldEventArg ?? new()));
+            EventMgr.Ins.Subscribe(typeof(UnLoadWorldEventArg), arg => OnUnLoadWorld(arg as UnLoadWorldEventArg ?? new()));
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
             uIMgr.Load();
+            consoleMgr.Load();
 
             uIMgr.uITable["gamePanel"].Sleep();
             uIMgr.uITable["mainMenuPanel"].Wake();
             uIMgr.uITable["mainMenuText"].Wake();
-            
-
-            Console.WriteLine("输入 /LoadWorld [seed] 加载世界");
-            Console.WriteLine("输入 /UnLoadWorld 卸载世界");
-
-            Task.Run(async () => {
-                while (true)
-                {
-                    // ReadLine 本身是阻塞的，但它阻塞的是这个子线程，不是你的游戏主线程！
-                    string command = await Console.In.ReadLineAsync() ?? "";
-                    if (command != null)
-                    {
-                        // 将命令放入一个线程安全的队列，在主线程 Update 里去处理
-                        _commandQueue.Enqueue(command);
-                    }
-                }
-            });
         }
 
-        public void SwitchState(GameState state)
+        
+        public void OnLoadWorld(LoadWorldEventArg arg)
         {
-            if(_state == GameState.InGame && session.IsLoad)
-            {
-                session.UnLoadWorld();
-                Console.WriteLine("正在卸载世界中");
-            }
+            _seed = arg.seed;
 
-            _state = state;
-
-            if (state == GameState.MainMenu)
-            {
-                GL.ClearColor(0,0,0,0);
-                uIMgr.uITable["gamePanel"].Sleep();
-                uIMgr.uITable["mainMenuPanel"].Wake();
-            }
-            else
-            {
-                uIMgr.uITable["gamePanel"].Wake();
-                uIMgr.uITable["mainMenuPanel"].Sleep();
-            }
-
+            Console.WriteLine("准备创建世界");
             
-            uIMgr.uITable.OnSizeChange(Size);
-        }
-
-        public void OnLoadWorld()
-        {
-            SwitchState(GameState.InGame);
+            gameStateMgr.SwitchState(GameState.InGame);
             Console.WriteLine("正在创建世界中");
             CursorState = CursorState.Grabbed;
+
+            session.GameRender?.OnSizeChange(Size);
             session.LoadWorld(_seed);
         }
 
+        public void OnUnLoadWorld(UnLoadWorldEventArg arg)
+        {
+            Console.WriteLine("准备卸载世界");
+            gameStateMgr.SwitchState(GameState.MainMenu);
+        }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            //渲染
-            //renderer.GetCamera(world.playerPos, world.playerDir);
-            //renderer.Draw();
+
             session.Render();
+
             uIMgr.Render();
 
             SwapBuffers();
         }
 
+        float _time = 1.0f;
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
 
             session.Update((float)UpdateTime);
 
-            if(_commandQueue.TryDequeue(out var command))
-            {
-                string[] s = command.Split();
-                if(s.Length == 2 && s[0] == "/LoadWorld")
-                {
-                    _seed = int.Parse(s[1]);
-
-                    Console.WriteLine("准备创建世界");
-
-                    OnLoadWorld();
-
-                    session.GameRender?.OnSizeChange(Size);
-
-                    //this.WindowState = WindowState.Fullscreen;
-                }
-                else if (s.Length == 1 && s[0] == "/UnLoadWorld")
-                {
-                    Console.WriteLine("准备卸载世界");
-                    SwitchState(GameState.MainMenu);
-                }
-            }
+            consoleMgr.Update();
 
             //Console.Clear();
+            if(uIMgr.uITable["mainMenuText"] is Text fps && _time > 1)
+            {
+                fps.ChangeContent("FPS: " + (int)(1.0f / UpdateTime));
+                _time = 0.0f;
+            }
+
+            _time += (float)UpdateTime;
             //Console.WriteLine("FPS: " + 1 / UpdateTime);
             //Console.WriteLine("Time: " + session.World != null ? (int)session.World.GameTime:0);
         }
@@ -161,6 +125,7 @@ namespace TextCraft.src.Core
 
         static void Main(string[] args)
         {
+            ConfigMgr.Ins.OnLoad(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\config.xml"));
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
             using (Game game = new Game(800, 600, "craft"))
             {
@@ -195,6 +160,12 @@ namespace TextCraft.src.Core
                     }
                     if (e.Key == Keys.LeftShift) input.down = true;
                     if (e.Key == Keys.F12) GC.Collect();
+                    if (e.Key == Keys.F11) {
+                        if (VSync == VSyncMode.On)
+                            VSync = VSyncMode.Off;
+                        else
+                            VSync = VSyncMode.On;
+                    }
                     world.ecsMgr.AddComponent(entity, input);
                 }
             }

@@ -2,39 +2,70 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace TextCraft.src.Core.Config
 {
-    internal class ConfigMgr:BaseSingleton<ConfigMgr>
+    public class ConfigMgr:BaseSingleton<ConfigMgr>
     {
-        public readonly WorldConfig worldConfig = new WorldConfig();
-        public readonly GraphicConfig graphicConfig = new GraphicConfig();
+        public GameConfig gameConfig = new GameConfig();
+        public GraphicConfig graphicConfig = new GraphicConfig();
+
+        public void Save(string path)
+        {
+            var xs = new XmlSerializer(typeof(ConfigMgr));
+            using var fs = new FileStream(path, FileMode.Create);
+            xs.Serialize(fs, ConfigMgr.Ins);
+        }
+        public void Load(string path)
+        {
+            var xs = new XmlSerializer(typeof(ConfigMgr));
+            using var fs = new FileStream(path, FileMode.Open);
+            var loader = (ConfigMgr?)xs.Deserialize(fs);
+            // 关键：将数据注入单例（清空原有，添加新数据）
+            if(loader != null) {
+                gameConfig = loader.gameConfig;
+                graphicConfig = loader.graphicConfig;
+            }
+        }
+
+        public void OnLoad(string path)
+        {
+            try
+            {
+                Load(path);
+            }
+            catch
+            {
+                Save(path);
+            }
+        }
     }
 
 
-    public class BaseConfig { }
-
-
-    internal class WorldConfig: BaseConfig
-    {
-        int _chunkSizeX = 32;
-        int _chunkSizeY = 32;
-        int _chunkSizeZ = 32;
-
-        int _seaLevel = 0;
-
-        public int SeaLevel => _seaLevel;
-        public int ChunkSizeX => _chunkSizeX;
-        public int ChunkSizeY => _chunkSizeY;
-        public int ChunkSizeZ => _chunkSizeZ;
+    [XmlInclude(typeof(GameConfig))]
+    [XmlInclude(typeof(GraphicConfig))]
+    public class BaseConfig 
+    { 
+    
     }
 
-    internal class GraphicConfig: BaseConfig
+
+    public class GameConfig : BaseConfig
     {
-        int _viewRange = 192;
-        public int ViewRange => _viewRange;
+        public int SeaLevel { get;set; } = 0;
+        public int ChunkSizeX { get; set; } = 32;
+        public int ChunkSizeY { get; set; } = 32;
+        public int ChunkSizeZ { get; set; } = 32;
+        public int PoolMaxCapacity { get;set; } = 3000;
+    }
+
+    public class GraphicConfig: BaseConfig
+    {
+        public int ViewRange { get; set; } = 192;
         public bool fog = true;
     }
 }

@@ -72,7 +72,7 @@ namespace TextCraft.src.Tools
         {
             if (worldY > stoneHeight && worldY > surfaceHeight)
             {
-                if(worldY > ConfigMgr.Ins.worldConfig.SeaLevel)
+                if(worldY > ConfigMgr.Ins.gameConfig.SeaLevel)
                     return 0;
                 else
                     return 144;
@@ -81,7 +81,7 @@ namespace TextCraft.src.Tools
             if (worldY > surfaceHeight && worldY < stoneHeight) return biome.SoilBlock;
             if (worldY == surfaceHeight && worldY > stoneHeight)
             {
-                if (worldY > ConfigMgr.Ins.worldConfig.SeaLevel)
+                if (worldY > ConfigMgr.Ins.gameConfig.SeaLevel)
                     return biome.SurfaceBlock;
                 else
                     return 48;
@@ -91,9 +91,9 @@ namespace TextCraft.src.Tools
         }
         public Chunk BuildChunk(Chunk chunk,Vector3i chunkPos)
         {
-            int sizeX = ConfigMgr.Ins.worldConfig.ChunkSizeX;
-            int sizeY = ConfigMgr.Ins.worldConfig.ChunkSizeY;
-            int sizeZ = ConfigMgr.Ins.worldConfig.ChunkSizeZ;
+            int sizeX = ConfigMgr.Ins.gameConfig.ChunkSizeX;
+            int sizeY = ConfigMgr.Ins.gameConfig.ChunkSizeY;
+            int sizeZ = ConfigMgr.Ins.gameConfig.ChunkSizeZ;
 
             
             for (int x = 0; x < sizeX; x++)

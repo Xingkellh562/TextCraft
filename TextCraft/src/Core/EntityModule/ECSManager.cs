@@ -8,7 +8,7 @@ namespace TextCraft.src.Core.EntityModule
 {
     internal class ECSManager
     {
-        int _nextId = 0;
+        //int _nextId = 0;
         Dictionary<int, Dictionary<Type, object>> _components = new();
 
         public void AddComponent<T>(int entity,T component) where T: struct

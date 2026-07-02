@@ -63,22 +63,22 @@ namespace TextCraft.src.Core.Input
 
                 //函数内部会去除重复请求
                 Vector3i chunkPos = new Vector3i(
-                    (int)Math.Floor((float)hitPos.X / ConfigMgr.Ins.worldConfig.ChunkSizeX),
-                    (int)Math.Floor((float)hitPos.Y / ConfigMgr.Ins.worldConfig.ChunkSizeY),
-                    (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.worldConfig.ChunkSizeZ)
+                    (int)Math.Floor((float)hitPos.X / ConfigMgr.Ins.gameConfig.ChunkSizeX),
+                    (int)Math.Floor((float)hitPos.Y / ConfigMgr.Ins.gameConfig.ChunkSizeY),
+                    (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.gameConfig.ChunkSizeZ)
                     );
 
-                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == 0)
+                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.gameConfig.ChunkSizeX == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitX);
-                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == 0)
+                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.gameConfig.ChunkSizeY == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitY);
-                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == 0)
+                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.gameConfig.ChunkSizeZ == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitZ);
-                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == ConfigMgr.Ins.worldConfig.ChunkSizeX - 1)
+                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.gameConfig.ChunkSizeX == ConfigMgr.Ins.gameConfig.ChunkSizeX - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitX);
-                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == ConfigMgr.Ins.worldConfig.ChunkSizeY - 1)
+                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.gameConfig.ChunkSizeY == ConfigMgr.Ins.gameConfig.ChunkSizeY - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitY);
-                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == ConfigMgr.Ins.worldConfig.ChunkSizeZ - 1)
+                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.gameConfig.ChunkSizeZ == ConfigMgr.Ins.gameConfig.ChunkSizeZ - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitZ);
 
                 world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
@@ -115,24 +115,24 @@ namespace TextCraft.src.Core.Input
                 }
 
                 Vector3i chunkPos = new Vector3i(
-                    (int)Math.Floor((float)hitPos.X / ConfigMgr.Ins.worldConfig.ChunkSizeX),
-                    (int)Math.Floor((float)hitPos.Y / ConfigMgr.Ins.worldConfig.ChunkSizeY),
-                    (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.worldConfig.ChunkSizeZ)
+                    (int)Math.Floor((float)hitPos.X / ConfigMgr.Ins.gameConfig.ChunkSizeX),
+                    (int)Math.Floor((float)hitPos.Y / ConfigMgr.Ins.gameConfig.ChunkSizeY),
+                    (int)Math.Floor((float)hitPos.Z / ConfigMgr.Ins.gameConfig.ChunkSizeZ)
                     );
 
                 world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos);
 
-                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == 0)
+                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.gameConfig.ChunkSizeX == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitX);
-                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == 0)
+                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.gameConfig.ChunkSizeY == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitY);
-                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == 0)
+                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.gameConfig.ChunkSizeZ == 0)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos - Vector3i.UnitZ);
-                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.worldConfig.ChunkSizeX == ConfigMgr.Ins.worldConfig.ChunkSizeX - 1)
+                if (hitPos.X - chunkPos.X * ConfigMgr.Ins.gameConfig.ChunkSizeX == ConfigMgr.Ins.gameConfig.ChunkSizeX - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitX);
-                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.worldConfig.ChunkSizeY == ConfigMgr.Ins.worldConfig.ChunkSizeY - 1)
+                if (hitPos.Y - chunkPos.Y * ConfigMgr.Ins.gameConfig.ChunkSizeY == ConfigMgr.Ins.gameConfig.ChunkSizeY - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitY);
-                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.worldConfig.ChunkSizeZ == ConfigMgr.Ins.worldConfig.ChunkSizeZ - 1)
+                if (hitPos.Z - chunkPos.Z * ConfigMgr.Ins.gameConfig.ChunkSizeZ == ConfigMgr.Ins.gameConfig.ChunkSizeZ - 1)
                     world.chunkUpdateMgr.CommitGridUpdateRequest(chunkPos + Vector3i.UnitZ);
             }
         }

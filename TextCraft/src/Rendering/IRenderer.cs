@@ -75,7 +75,7 @@ namespace TextCraft.src.Rendering
                 GL.ClearColor(0.2f, 0.4f, 0.8f, 1.0f);
             }
             else
-                GL.ClearColor(ClearColor.X, ClearColor.Y, ClearColor.Z, 1.0f);
+                GL.ClearColor(ClearColor.X, ClearColor.Y, ClearColor.Z, 0);
 
             GL.Enable(EnableCap.CullFace);
             foreach (var grid in world.gridMgr.grids["default"].Values)

@@ -33,91 +33,122 @@ namespace TextCraft.src.Tools
         {
             GlyphMap = new();
             PixelData = new byte[] { };
-            Generate(System.IO.Path.Combine(AppContext.BaseDirectory + "Resources\\ui\\msyh.ttc"), 32,
-                "qwertyuiopasdfghjklzxcvbnmQWERTYUIIOPOASDFGHJKLZXCVBNM[]{};'\\,./\'\"|<>?1234567890!@#$%^&*()_+-=`~ 的一了是不在人有这大上主为个中到以说要就他会可也得下自时来面过出起当你都把还由其些小对我们都现能工向分然很并感方知多同年日前头道后里之么总从无情己所之爱定本两去现把");
+            Generate(System.IO.Path.Combine(AppContext.BaseDirectory + "Resources\\ui\\msyhl.ttc"), 32,
+                "qwertyuiopasdfghjklzxcvbnmQWERTYUIIOPOASDFGHJKLZXCVBNM[]{}:;'\\,./\'\"|<>?1234567890!@#$%^&*()_+-=`~ ");
         }
 
-        public void Generate(string fontPath,float fontSize,string characters,int padding = 2,int maxWidth = 1024)
+        public void Generate(string fontPath, float fontSize, string characters, int padding = 2, int maxWidth = 1024)
         {
             var collection = new FontCollection();
             var families = collection.AddCollection(fontPath);
             var family = families.First();
-            var font = family.CreateFont(fontSize,FontStyle.Regular);
+            var font = family.CreateFont(fontSize, FontStyle.Regular);
 
-            var glyphSizes = new Dictionary<char,Size>();
+            var textOptions = new TextOptions(font);
+            var rawRects = new Dictionary<char, FontRectangle>();
+            foreach (char c in characters)
+                rawRects[c] = TextMeasurer.MeasureSize(c.ToString(), textOptions);
 
-            foreach(char c in characters)
-            {
-                var size = TextMeasurer.MeasureSize(c.ToString(),new TextOptions(font));
-                glyphSizes[c] = new Size((int)Math.Ceiling(size.Width) + padding * 2,
-                                         (int)Math.Ceiling(size.Height) + padding * 2);
-            }
+            // 2. 确定统一框尺寸
+            float maxHeight = 32f;
+            float maxFullWidth = 32f;
+            float fullWidth = maxFullWidth;
 
+            // 框尺寸
+            int boxHeight = (int)Math.Ceiling(maxHeight);
+            int fullBoxWidth = (int)Math.Ceiling(fullWidth);
+
+            // 3. 布局（自动换行）
             int curX = padding, curY = padding, maxRowHeight = 0;
-            var charPositions = new Dictionary<char, Point>();
-
+            var charPositions = new Dictionary<char, Rectangle>();
             foreach (char c in characters)
             {
-                var size = glyphSizes[c];
-                if (curX + size.Width > maxWidth)
+                int boxW = fullBoxWidth;
+                int boxH = boxHeight;
+                if (curX + boxW > maxWidth)
                 {
                     curX = padding;
-                    curY += maxRowHeight + padding;
+                    curY += boxH + padding;
                     maxRowHeight = 0;
                 }
-
-                charPositions[c] = new Point(curX, curY);
-                curX += size.Width + padding;
-                if (size.Height > maxRowHeight) maxRowHeight = size.Height;
+                charPositions[c] = new Rectangle(curX, curY, boxW, boxH);
+                curX += boxW + padding;
+                if (boxH > maxRowHeight) maxRowHeight = boxH;
             }
-
 
             Width = maxWidth;
             Height = curY + maxRowHeight + padding;
 
-            using (var atlas = new Image<Rgba32>(Width,Height))
+            // 4. 生成图集
+            using (var atlas = new Image<Rgba32>(Width, Height))
             {
-               // atlas.Mutate(ctx => ctx.BackgroundColor(Color.White));
+                //atlas.Mutate(ctx => ctx.Fill(Color.White)); // 调试用白色背景
 
                 foreach (char c in characters)
                 {
-                    var pos = charPositions[c];
-                    var size = glyphSizes[c];
+                    var rect = charPositions[c];
 
-                    var options = new RichTextOptions(font)
+                    // 4.1 在临时图像上绘制字符（背景透明）
+                    int rawW = (int)Math.Ceiling(maxHeight);
+                    int rawH = (int)Math.Ceiling(maxFullWidth);
+                    using (var temp = new Image<Rgba32>(rawW, rawH))
                     {
-                        Origin = new System.Numerics.Vector2(pos.X + padding, pos.Y)
-                    };
-                    atlas.Mutate(ctx => ctx.DrawText(options, c.ToString(), Color.White));
-                    // 记录映射信息 (像素边界)
-                    var bounds = new Rectangle(pos.X, pos.Y, size.Width, size.Height);
+                        temp.Mutate(ctx => ctx.Clear(Color.Transparent));
+                        // 绘制原点使字符位于临时图像中心（基线居中）
+                        float originX = 0;//rawW / 2f - rawRect.Width / 2f;
+                        float originY = 0;
+                        var options = new RichTextOptions(font)
+                        {
+                            Origin = new System.Numerics.Vector2(originX, originY)
+                        };
+                        temp.Mutate(ctx => ctx.DrawText(options, c.ToString(), Color.White));
 
-                    // UV 归一化（Y 轴翻转）
+                        int width = !IsWideChar(c) && rawRects[c].Width > rect.Width / 2 ? (int)rawRects[c].Width : rect.Width;
+                        //Console.WriteLine(rawRects[c].Width);
+
+                        // 4.2 拉伸到目标框尺寸（含 padding）
+                        using (var stretched = temp.Clone(ctx => ctx.Resize(width, rect.Height)))
+                        {
+                            // 4.3 绘制到图集对应位置
+                            atlas.Mutate(ctx => ctx.DrawImage(stretched, new Point(rect.X, rect.Y), 1f));
+                        }
+                    }
+
+                    // 4.4 记录映射信息
+                    var bounds = new Rectangle(rect.X, rect.Y, rect.Width, rect.Height);
                     var uv = new RectangleF(
                         bounds.X / (float)Width,
-                        bounds.Y / (float)Height,  // 翻转 V，并减去高度
+                        bounds.Y / (float)Height,
                         bounds.Width / (float)Width,
                         bounds.Height / (float)Height
                     );
-
-                    // 获取 XAdvance (字间距)
-                    var advance = TextMeasurer.MeasureSize(c.ToString(), new TextOptions(font));
 
                     GlyphMap[c] = new GlyphInfo
                     {
                         Character = c,
                         Bounds = bounds,
                         UV = uv,
-                        XAdvance = advance.Width,
-                        YOffset = 0 // 简单实现忽略垂直偏移，或根据 Ascent 计算
+                        XAdvance = rect.Width, // 步进等于框宽度
+                        YOffset = 0
                     };
-
-                    atlas.Save("D:\\craftText\\TextCraft\\TextCraft\\bin\\Debug\\net8.0\\Resources\\ui\\1234567.png");
                 }
 
+                // 保存调试图集
+                atlas.Save("font_atlas_fixed.png");
                 PixelData = new byte[Width * Height * 4];
                 atlas.CopyPixelDataTo(PixelData);
             }
+        }
+
+        public static bool IsWideChar(char c)
+        {
+            // 1. 中文字符（基本区）
+            if (c >= 0x4E00 && c <= 0x9FFF) return true;
+            // 2. 全角ASCII、标点等（！＂＃ ～ 等）
+            if (c >= 0xFF00 && c <= 0xFFEF) return true;
+            // 3. 日文/韩文等常用宽字符（可根据项目需要添加）
+            if (c >= 0x3040 && c <= 0x30FF) return true; // 平假名/片假名
+            return false;
         }
     }
 }

@@ -111,9 +111,9 @@ namespace TextCraft.src.Tools
             if(!GetVertices(chunkMgr,  pos, grids.Length, out var vertices))
                 return false;
 
-            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeY,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.gameConfig.ChunkSizeX,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeY,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeZ);
 
             for (int i = 0; i < grids.Length; i++)
             {
@@ -130,9 +130,9 @@ namespace TextCraft.src.Tools
             if (!GetVertices(chunkMgr, (Vector3i)pos, grids.Length, out var vertices))
                 return false;
 
-            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeY,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.gameConfig.ChunkSizeX,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeY,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeZ);
 
             for(int i = 0; i < grids.Length; i++)
             {
@@ -146,9 +146,9 @@ namespace TextCraft.src.Tools
 
         private static bool GetVertices(ChunkDataMgr chunkMgr, Vector3i pos , int length,out List<float>[] vertices)
         {
-            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeY,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.gameConfig.ChunkSizeX,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeY,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeZ);
 
             vertices = new List<float>[length];
             for(int i = 0;i< vertices.Length;i++)

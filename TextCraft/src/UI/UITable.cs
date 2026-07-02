@@ -35,7 +35,7 @@ namespace TextCraft.src.UI
             Rect gameRect = new Rect(0,0, 0, 0) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.LowerRight };
             Rect sightRect = new Rect(-8, -8, 16, 16) { UpperLeftPoint = AnchorPoint.Center, LowerRightPoint = AnchorPoint.Center };
             Rect menuRect = new Rect(-128, -64, 256, 32) { UpperLeftPoint = AnchorPoint.Center, LowerRightPoint = AnchorPoint.Center };
-            Rect menuTextRect = new Rect(128, 64, 256, 32) { UpperLeftPoint = AnchorPoint.Center, LowerRightPoint = AnchorPoint.Center };
+            Rect menuTextRect = new Rect(0, 48, 512, 32) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
             Rect displayRect = new Rect(0, 128,192, 192) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
             Rect displayBlockRect = new Rect(40, 40, 112, 112) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
 
@@ -50,7 +50,7 @@ namespace TextCraft.src.UI
             sight.SetSpirit(SpiritTable.Ins.sight);
             displayPanel.SetSpirit(SpiritTable.Ins.displayTable);
             displayBlock.SetSpirit(SpiritTable.Ins.BlockSpirits[1]);
-            mainMenuText.ChangeContent("的一了是不在人有这大上主为个中到以说要就他会可也得下自时来面过出起当你都把还由其些小对我们都现能工向分然很并感方知多同年日前头道后里之么总从无情己所之爱定本两去现把");
+            mainMenuText.ChangeContent("FPS:");
 
 
             AddComponent(gamePanel, components, "gamePanel");

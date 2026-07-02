@@ -19,7 +19,7 @@ namespace TextCraft.src.Core.ChunkModule
 
         public ChunkDataMgr()
         {
-            size = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX, ConfigMgr.Ins.worldConfig.ChunkSizeY, ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+            size = new Vector3i(ConfigMgr.Ins.gameConfig.ChunkSizeX, ConfigMgr.Ins.gameConfig.ChunkSizeY, ConfigMgr.Ins.gameConfig.ChunkSizeZ);
         }
         
         public void AddChunk(Vector3i chunkPos,Chunk chunk)

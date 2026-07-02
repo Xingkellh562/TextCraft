@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenTK.Mathematics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,6 +82,7 @@ namespace TextCraft.src.Table
 
         public QuadFace[] Model => _model;
 
+        public Vector3 damp = new Vector3(0.25f, 0.05f, 0.25f);
         public bool IsLucency => _isLucency;
 
         public Block(int id, string name, BlockType blockType, QuadFace[] model,bool isLucency = false)

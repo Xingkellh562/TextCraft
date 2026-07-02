@@ -26,16 +26,17 @@ namespace TextCraft.src.Core.Physic
 
                 if (body.useGravity)
                 {
-                    body.damp = new Vector3(0.25f, 0.05f, 0.25f);
                     body.acceleration.Y = -9.8f * 8;
                 }
                 else
                 {
-                    body.damp = new Vector3(0.05f, 0.05f, 0.05f);
+                    body.damp.Y *= 5;
                     body.acceleration.Y = 0;
                 }
 
                 body.velocity -= new Vector3(body.damp.X * body.velocity.X, body.damp.Y * body.velocity.Y, body.damp.Z * body.velocity.Z);
+
+                if(!body.useGravity)  body.damp.Y /= 5;
 
                 CollisionDetection(world.chunkDataMgr,time,ref body,box,ref trans);
 

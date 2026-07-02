@@ -35,7 +35,6 @@ namespace TextCraft.src.Core
 
         private bool _disposed = false;
 
-
         private int _seed = 0;
         public int Seed => _seed;
 
@@ -67,20 +66,21 @@ namespace TextCraft.src.Core
         {
             CreateRequest();
 
-            foreach (var entity in ecsMgr.GetEntitiesWith(new Type[] { typeof(Transform), typeof(InputComponent), typeof(RigidBody), typeof(Box) }))
+            foreach (var entity in ecsMgr.GetEntitiesWith(new Type[] { typeof(Transform), typeof(Moving), typeof(InputComponent), typeof(RigidBody), typeof(Box) }))
             {
                 var trans = ecsMgr.GetComponent<Transform>(entity);
                 var input = ecsMgr.GetComponent<InputComponent>(entity);
                 var body = ecsMgr.GetComponent<RigidBody>(entity);
                 var box = ecsMgr.GetComponent<Box>(entity);
+                var moving = ecsMgr.GetComponent<Moving>(entity);
 
-                if(body.useGravity)
-                    body.velocity += inputMgr.MoveUpdate(updateTime, 128, trans.rotation,body.useGravity, ref input);
+                if (body.useGravity)
+                    body.velocity += inputMgr.MoveUpdate(updateTime, moving.moveSpeed, trans.rotation,body.useGravity, ref input);
                 else
-                    body.velocity += inputMgr.MoveUpdate(updateTime, 36, trans.rotation, body.useGravity, ref input);
+                    body.velocity += inputMgr.MoveUpdate(updateTime, moving.flyingSpeed, trans.rotation, body.useGravity, ref input);
 
                 if (body.onGround && body.useGravity && input.up)
-                    body.velocity.Y += 16;
+                    body.velocity.Y += moving.jumpForce;
 
                 input.spaceTimer -= updateTime;
                 input.spaceTimer = Math.Clamp(input.spaceTimer,0,input.spaceInterval);
@@ -100,12 +100,7 @@ namespace TextCraft.src.Core
                 inputMgr.LeftMouseButton(this,updateTime ,ref input);
                 inputMgr.RightMouseButton(this,updateTime,box,ref input);
 
-                if (chunkDataMgr.GetBlock((int)trans.position.X, (int)trans.position.Y - 1, (int)trans.position.Z) == 144)
-                {
-                    body.damp = new Vector3(0.25f, 0.25f, 0.25f);
-                    body.onGround = true;
-                }
-                else body.damp = new Vector3(0.05f, 0.05f, 0.05f);
+                body.damp = BlockTable.Ins[chunkDataMgr.GetBlock((int)trans.position.X, (int)trans.position.Y - 1, (int)trans.position.Z)].damp;
 
                 ecsMgr.AddComponent(entity, trans);
                 ecsMgr.AddComponent(entity, input);
@@ -131,9 +126,9 @@ namespace TextCraft.src.Core
         {
 
             List<List<Vector3i>> list = ChunkRangeHelper.GetChunksInRanges(playerPos, new Vector3i(
-                ConfigMgr.Ins.worldConfig.ChunkSizeX,
-                ConfigMgr.Ins.worldConfig.ChunkSizeY,
-                ConfigMgr.Ins.worldConfig.ChunkSizeZ
+                ConfigMgr.Ins.gameConfig.ChunkSizeX,
+                ConfigMgr.Ins.gameConfig.ChunkSizeY,
+                ConfigMgr.Ins.gameConfig.ChunkSizeZ
                 ), 0, 7*32 + 16);
 
             foreach (var chunkPos in list[0])
@@ -141,9 +136,9 @@ namespace TextCraft.src.Core
                 chunkUpdateMgr.CommitChunkUpdateRequest(chunkPos);
             }
 
-            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.worldConfig.ChunkSizeX,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeY,
-                                ConfigMgr.Ins.worldConfig.ChunkSizeZ);
+            Vector3i chunkSize = new Vector3i(ConfigMgr.Ins.gameConfig.ChunkSizeX,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeY,
+                                ConfigMgr.Ins.gameConfig.ChunkSizeZ);
 
             Vector3i[] nei = {
                     Vector3i.UnitX,
@@ -191,7 +186,8 @@ namespace TextCraft.src.Core
 
         void LoadPlayer()
         {
-            EntityObject entityObject = new EntityObject() { name = "player", type = EntityType.living };
+            EntityObject entityObject = new EntityObject() { name = "Xingkellh",typeName = "Player", type = EntityType.living };
+            Moving moving = new Moving() {moveSpeed = 128,flyingSpeed = 256,jumpForce = 16};
             Transform playerTrans = new Transform() { position = new Vector3(0, 90,0), rotation = new Vector3(0, 0, 1) };
             RigidBody body = new RigidBody(50);
             Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
@@ -199,6 +195,7 @@ namespace TextCraft.src.Core
             InputComponent input = new();
 
             ecsMgr.AddComponent(0, entityObject);
+            ecsMgr.AddComponent(0, moving);
             ecsMgr.AddComponent(0, playerTrans);
             ecsMgr.AddComponent(0, body);
             ecsMgr.AddComponent(0, box);

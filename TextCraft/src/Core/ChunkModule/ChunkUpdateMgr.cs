@@ -109,9 +109,9 @@ namespace TextCraft.src.Core.ChunkModule
             bool success = Pools.Ins.chunkPool.TryTake(out Chunk? chunk);
 
             var size = new Vector3i(
-            ConfigMgr.Ins.worldConfig.ChunkSizeX,
-            ConfigMgr.Ins.worldConfig.ChunkSizeY,
-            ConfigMgr.Ins.worldConfig.ChunkSizeZ
+            ConfigMgr.Ins.gameConfig.ChunkSizeX,
+            ConfigMgr.Ins.gameConfig.ChunkSizeY,
+            ConfigMgr.Ins.gameConfig.ChunkSizeZ
             );
 
             if (!success) chunk = new Chunk(size);

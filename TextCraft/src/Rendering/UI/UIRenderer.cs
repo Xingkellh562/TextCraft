@@ -43,6 +43,8 @@ namespace TextCraft.src.Rendering.UI
         {
             GL.Disable(EnableCap.DepthTest);
             GL.Disable(EnableCap.CullFace);
+            GL.Disable(EnableCap.Multisample);
+            //GL.Enable(EnableCap.Blend);
             _shader.GetMatrix( _size);
 
             List<UIComponent> uiCs = new List<UIComponent>();

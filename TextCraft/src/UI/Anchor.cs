@@ -61,7 +61,7 @@ namespace TextCraft.src.UI
             }
             else if (component is Text text)
             {
-                //text.ComposeAndGetTextMesh();
+                text.ComposeAndGetTextMesh(posA,posB);
             }
 
         }

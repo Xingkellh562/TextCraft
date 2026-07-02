@@ -129,22 +129,22 @@ namespace TextCraft.src.UI
             ComposeAndGetTextMesh();
         }
 
+        private Vector2i truePos = new Vector2i();
         public void ChangeContent(string content)
         {
             Content = content;
             ComposeAndGetTextMesh();
         }
-
-        public void ComposeAndGetTextMesh(int spacingX = 2,int spacingY = 2,int size = 24)
+        public void ComposeAndGetTextMesh(int spacingX = 2,int spacingY = 2,int size = 32)
         {
             textMesh.vertices = new float[24 * Content.Length];
             int nowIndex = 0;
-            int curX = rect.posA.X + spacingX, curY = rect.posA.Y + spacingY;
+            int curX = truePos.X + spacingX, curY = truePos.Y + spacingY;
             foreach (var c in Content)
             {
                 if (curX + size + spacingX > rect.size.X)
                 {
-                    curX = spacingX + rect.posA.X;
+                    curX = spacingX + truePos.X;
                     curY += size + spacingY;
                 }
                 float[] vertices = GetVertices(curX, curY, size, c);
@@ -152,23 +152,32 @@ namespace TextCraft.src.UI
                 {
                     textMesh.vertices[i + nowIndex] = vertices[i];
                 }
-                curX += spacingX + size;
+                curX += FontLoader.IsWideChar(c) ? spacingX + size : spacingX + size / 2;
                 nowIndex += 24;
             }
+            textMesh.isUpdate = false;
+        }
+        public void ComposeAndGetTextMesh(Vector2i posA , Vector2i posB,int spacingX = 2, int spacingY = 2, int size = 24)
+        {
+            truePos = posA;
+            ComposeAndGetTextMesh(spacingX, spacingY, size);
         }
 
         private float[] GetVertices(int x,int y,int size,char charactor)
         {
             if (!FontLoader.Ins.GlyphMap.TryGetValue(charactor,out var info)) return new float[0];
-            float[] vertices =
-            {
-                x      ,y      ,info.UV.X                 ,info.UV.Y, 
-                x+size ,y      ,info.UV.X + info.UV.Width ,info.UV.Y,
-                x+size ,y+size ,info.UV.X + info.UV.Width ,info.UV.Y + info.UV.Height ,
-                x      ,y      ,info.UV.X                 ,info.UV.Y,
-                x+size ,y+size ,info.UV.X + info.UV.Width ,info.UV.Y + info.UV.Height,
-                x      ,y+size ,info.UV.X                 ,info.UV.Y + info.UV.Height,
-            };
+            float[] vertices = { };
+            
+                vertices = new float[]
+                {
+                    x      ,y      ,info.UV.X                 ,info.UV.Y,
+                    x+size ,y      ,info.UV.X + info.UV.Width ,info.UV.Y,
+                    x+size ,y+size ,info.UV.X + info.UV.Width ,info.UV.Y + info.UV.Height ,
+                    x      ,y      ,info.UV.X                 ,info.UV.Y,
+                    x+size ,y+size ,info.UV.X + info.UV.Width ,info.UV.Y + info.UV.Height,
+                    x      ,y+size ,info.UV.X                 ,info.UV.Y + info.UV.Height,
+                };
+            
             return vertices;
         }
     }
