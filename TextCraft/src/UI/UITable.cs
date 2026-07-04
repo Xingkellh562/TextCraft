@@ -32,24 +32,24 @@ namespace TextCraft.src.UI
         }
         public void LoadUI()
         {
-            Rect gameRect = new Rect(0,0, 0, 0) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.LowerRight };
+            Rect gameRect = new Rect(0, 0, 0, 0) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.LowerRight };
             Rect sightRect = new Rect(-8, -8, 16, 16) { UpperLeftPoint = AnchorPoint.Center, LowerRightPoint = AnchorPoint.Center };
             Rect menuRect = new Rect(-128, -64, 256, 32) { UpperLeftPoint = AnchorPoint.Center, LowerRightPoint = AnchorPoint.Center };
             Rect menuTextRect = new Rect(0, 48, 512, 32) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
-            Rect displayRect = new Rect(0, 128,192, 192) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
+            Rect displayRect = new Rect(0, 128, 192, 192) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
             Rect displayBlockRect = new Rect(40, 40, 112, 112) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
 
             var gamePanel = new Panel(gameRect);
-            var sight = new Spirit(sightRect);
-            var mainMenuPanel = new Spirit(menuRect);
-            var mainMenuText = new Text(menuTextRect);
-            var displayPanel = new Spirit(displayRect);
-            var displayBlock = new Spirit(displayBlockRect);
+            var sight = new SpiritComponent(sightRect);
+            var mainMenuPanel = new SpiritComponent(menuRect);
+            var mainMenuText = new TextComponent(menuTextRect);
+            var displayPanel = new SpiritComponent(displayRect);
+            var displayBlock = new SpiritComponent(displayBlockRect);
 
-            mainMenuPanel.SetSpirit(SpiritTable.Ins.title);
-            sight.SetSpirit(SpiritTable.Ins.sight);
-            displayPanel.SetSpirit(SpiritTable.Ins.displayTable);
-            displayBlock.SetSpirit(SpiritTable.Ins.BlockSpirits[1]);
+            mainMenuPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["title"].rect);
+            sight.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["sight"].rect);
+            displayPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["displayTable"].rect);
+            displayBlock.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["1"].rect);
             mainMenuText.ChangeContent("FPS:");
 
 

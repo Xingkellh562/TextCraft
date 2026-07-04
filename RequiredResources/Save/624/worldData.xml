@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WorldLoadData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <cameraPosX>-103.46554</cameraPosX>
+  <cameraPosY>35.730488</cameraPosY>
+  <cameraPosZ>2.5487351</cameraPosZ>
+  <cameraDirX>-0.23616819</cameraDirX>
+  <cameraDirY>-0.81995344</cameraDirY>
+  <cameraDirZ>-0.5214735</cameraDirZ>
+  <seed>12345</seed>
+</WorldLoadData>

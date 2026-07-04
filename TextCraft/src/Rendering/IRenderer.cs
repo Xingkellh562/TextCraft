@@ -34,7 +34,7 @@ namespace TextCraft.src.Rendering
         Vector3 cameraPos = new Vector3();
         Vector3 cameraDir = new Vector3();
 
-        World world = new World();
+        World world;
         public Vector3 ClearColor { get; set; } = new Vector3(0.6f, 0.7f, 1);
 
         public GameRenderer(World world)

@@ -6,6 +6,8 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using TextCraft.src.Core.Config;
+using TextCraft.src.Core.Save;
+
 //using System.Threading;
 using TextCraft.src.Rendering;
 using TextCraft.src.Tools;
@@ -17,12 +19,14 @@ namespace TextCraft.src.Core.ChunkModule
     {
         ChunkDataMgr _chunkMgr;
         GridMgr _gridMgr;
+        ChunkStorage _chunkStorage;
+
         TerrainGenerator terrainGenerator;
 
         bool _chunkUpdateRuning = false;
         object _lock = new object();
 
-        Thread updateThread;
+        public Thread updateThread;
 
         public ConcurrentQueue<Vector3i> chunkCreateQueue = new ConcurrentQueue<Vector3i>();
         public ConcurrentQueue<Vector3i> chunkDeleteQueue = new ConcurrentQueue<Vector3i>();
@@ -42,10 +46,11 @@ namespace TextCraft.src.Core.ChunkModule
         private HashSet<Vector3i> gridDeleteRequest = new HashSet<Vector3i>();
         private HashSet<Vector3i> gridUpdateRequest = new HashSet<Vector3i>();
 
-        public ChunkUpdateMgr(ChunkDataMgr chunkMgr, GridMgr gridMgr, int seed = 91919191)
+        public ChunkUpdateMgr(ChunkDataMgr chunkMgr, GridMgr gridMgr,ChunkStorage chunkStorage ,int seed = 91919191)
         {
             _chunkMgr = chunkMgr;
             _gridMgr = gridMgr;
+            _chunkStorage = chunkStorage;
             terrainGenerator = new TerrainGenerator(seed);
             updateThread = new Thread(Update);
         }
@@ -65,19 +70,16 @@ namespace TextCraft.src.Core.ChunkModule
                 _chunkUpdateRuning = false;
             }
             chunkCreateQueue.Clear();
-            chunkDeleteQueue.Clear();
             gridCommitQueue.Clear();
             gridDeleteQueue.Clear();
             gridUpdateQueue.Clear();
 
             chunkCreateFinishQueue.Clear();
-            chunkDeleteFinishQueue.Clear();
             gridCreateFinishQueue.Clear();
             gridDeleteFinishQueue.Clear();
             gridUpdateFinishQueue.Clear();
 
             chunkCreateRequest.Clear();
-            chunkDeleteRequest.Clear();
             gridCommitRequest.Clear();
             gridDeleteRequest.Clear();
             gridUpdateRequest.Clear();
@@ -89,7 +91,7 @@ namespace TextCraft.src.Core.ChunkModule
             {
                 chunkUpdateRuning = _chunkUpdateRuning;
             }
-            while (chunkUpdateRuning)
+            while (chunkUpdateRuning || chunkDeleteQueue.Count > 0)
             {
                 if (chunkCreateQueue.TryDequeue(out Vector3i result))
                     CreateChunk(result);
@@ -118,7 +120,10 @@ namespace TextCraft.src.Core.ChunkModule
 
             chunk ??= new(size);
 
-            chunk = terrainGenerator.BuildChunk(chunk, chunkPos);
+            if(_chunkStorage.TryLoadChunk(chunkPos,out int[] chunkData))
+                chunk.SetChunk(chunkData);
+            else
+                chunk = terrainGenerator.BuildChunk(chunk, chunkPos);
 
             _chunkMgr.AddChunk(chunkPos, chunk);
 
@@ -127,11 +132,14 @@ namespace TextCraft.src.Core.ChunkModule
 
         private void DeleteChunk(Vector3i chunkPos)
         {
+            if (_chunkStorage.storagingChunk.Contains(chunkPos) && _chunkMgr.Chunks.ContainsKey(chunkPos))
+                _chunkStorage.SaveChunkWithPos(chunkPos, _chunkMgr.Chunks[chunkPos].GetChunk());
             //在函数内部入池
             _chunkMgr.TryRemoveChunk(chunkPos);
 
             chunkDeleteFinishQueue.Enqueue(chunkPos);
-            
+
+            _chunkStorage.storagingChunk.Remove(chunkPos);
         }
 
         private void CommitRanderChunk(Vector3i chunkPos)
@@ -148,9 +156,10 @@ namespace TextCraft.src.Core.ChunkModule
         }
         private void UpdateRanderChunk(Vector3i chunkPos)
         {
+            _chunkStorage.storagingChunk.Add(chunkPos);
             gridUpdateFinishQueue.Enqueue(chunkPos);
 
-            if(!_gridMgr.grids["default"].TryGetValue(chunkPos,out var grid))
+            if (!_gridMgr.grids["default"].TryGetValue(chunkPos,out var grid))
             {
                 if (!Pools.Ins.gridPool.TryTake(out grid))
                     grid = new Grid();
@@ -168,7 +177,6 @@ namespace TextCraft.src.Core.ChunkModule
 
             if (!_gridMgr.grids["lucency"].ContainsKey(chunkPos) && grid2?.vertices?.Length == 0)
                 grid2.Dispose();
-
         }
 
         private void DeleteRanderChunk(Vector3i chunkPos)

@@ -19,6 +19,16 @@ namespace TextCraft.src.Core.ChunkModule
             set => SetBlock(x, y, z, value);
         }
 
+        public void SetChunk(int[]? datas)
+        {
+            if(datas?.Length == _blocks?.Length)
+                _blocks = datas;
+        }
+        public int[] GetChunk()
+        {
+            return (int[]?)_blocks?.Clone() ?? new int[0];
+        }
+
         public int GetBlock(int x, int y, int z)
             => _blocks != null ? _blocks[x * _size.Y * _size.Z + y * _size.Z + z] : 0;
 

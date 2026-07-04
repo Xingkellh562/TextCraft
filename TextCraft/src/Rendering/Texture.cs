@@ -10,7 +10,7 @@ using OpenTK.Mathematics;
 
 namespace TextCraft.src.Rendering
 {
-    internal class Texture
+    public class Texture
     {
         // 纹理ID，只生成一次
         public int Handle { get; private set; }

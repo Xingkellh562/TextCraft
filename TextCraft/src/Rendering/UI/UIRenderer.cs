@@ -27,7 +27,7 @@ namespace TextCraft.src.Rendering.UI
             _shader.CreateShaderProgram();
             try
             {
-                _shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png"),new Tools.TextureLoader());
+                //_shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png"),new Tools.TextureLoader());
                 _shader.font.LoadFont();
             }
             catch
@@ -52,9 +52,9 @@ namespace TextCraft.src.Rendering.UI
             foreach (var component in uiCs)
             {
                 _shader.isFont = false;
-                if (component is Spirit spirit)
+                if (component is SpiritComponent spirit)
                     _shader.GetRectMesh(spirit.rectMesh ?? new UIRectMesh(new float[0]));
-                else if (component is Text text)
+                else if (component is TextComponent text)
                 {
                     _shader.isFont = true;
                     _shader.GetRectMesh(text.textMesh ?? new UIRectMesh(new float[0]));

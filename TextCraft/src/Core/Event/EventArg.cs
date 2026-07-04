@@ -12,6 +12,7 @@ namespace TextCraft.src.Core.Event
 
     public class LoadWorldEventArg:EventArg
     {
+        public string name = "";
         public int seed;
     }
 

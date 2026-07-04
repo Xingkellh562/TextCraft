@@ -8,6 +8,7 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using SixLabors.ImageSharp.Drawing;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Runtime;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Core.ConsoleModule;
@@ -23,7 +24,6 @@ using TextCraft.src.UI;
 
 namespace TextCraft.src.Core
 {
-    
     internal class Game : GameWindow
     {
         int _seed = 0;
@@ -65,6 +65,7 @@ namespace TextCraft.src.Core
         
         public void OnLoadWorld(LoadWorldEventArg arg)
         {
+            string name = arg.name;
             _seed = arg.seed;
 
             Console.WriteLine("准备创建世界");
@@ -74,7 +75,8 @@ namespace TextCraft.src.Core
             CursorState = CursorState.Grabbed;
 
             session.GameRender?.OnSizeChange(Size);
-            session.LoadWorld(_seed);
+            session.LoadWorld(name,_seed);
+            WindowState = WindowState.Maximized;
         }
 
         public void OnUnLoadWorld(UnLoadWorldEventArg arg)
@@ -104,7 +106,7 @@ namespace TextCraft.src.Core
             consoleMgr.Update();
 
             //Console.Clear();
-            if(uIMgr.uITable["mainMenuText"] is Text fps && _time > 1)
+            if(uIMgr.uITable["mainMenuText"] is TextComponent fps && _time > 1)
             {
                 fps.ChangeContent("FPS: " + (int)(1.0f / UpdateTime));
                 _time = 0.0f;
@@ -123,9 +125,17 @@ namespace TextCraft.src.Core
             uIMgr.OnSizeChange(Size);
         }
 
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            EventMgr.Ins.Publish(new UnLoadWorldEventArg() { });
+        }
+
         static void Main(string[] args)
         {
             ConfigMgr.Ins.OnLoad(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\config.xml"));
+            //ModelTable.Ins.Save(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\Tables\\modelTable.xml"));
+
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
             using (Game game = new Game(800, 600, "craft"))
             {
@@ -269,7 +279,7 @@ namespace TextCraft.src.Core
                     nowBlock = input.nowBlock;
                     world.ecsMgr.AddComponent(entity, input);
                 }
-                (uIMgr.uITable["displayBlock"] as Spirit)?.SetSpirit(SpiritTable.Ins.BlockSpirits[nowBlock]);
+                (uIMgr.uITable["displayBlock"] as SpiritComponent)?.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits[nowBlock.ToString()].rect);
             }
         }
     }

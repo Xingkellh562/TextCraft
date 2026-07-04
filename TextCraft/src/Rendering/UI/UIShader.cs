@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using TextCraft.src.Table;
 
 namespace TextCraft.src.Rendering.UI
 {
@@ -73,8 +74,8 @@ namespace TextCraft.src.Rendering.UI
             }
             else
             {
-                size = new Vector2(atlas.Width, atlas.Height);
-                atlas.Bind(TextureUnit.Texture1);
+                size = new Vector2(AtlasTable.Ins.uiAtlas.texture.Width, AtlasTable.Ins.uiAtlas.texture.Height);
+                AtlasTable.Ins.uiAtlas.texture.Bind(TextureUnit.Texture1);
             }
             int sizeLoc = GL.GetUniformLocation(_program, "pictureSize");
             GL.Uniform2(sizeLoc, size);

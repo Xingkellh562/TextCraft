@@ -12,7 +12,7 @@
 
 ## 📖 项目简介
 
-TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来源于 Minecraft。项目采用模块化设计，使用 OpenGL 进行渲染，旨在提供一个轻量、高性能的体素游戏开发框架。
+TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来源于 Minecraft。项目采用模块化设计，使用 OpenGL 进行渲染，是一个轻量、性能良好的体素游戏开发框架。
 
 ## ✨ 特性
 
@@ -103,11 +103,14 @@ dotnet run --project TextCraft/TextCraft.csproj
 - 世界生成算法(完成)
 - 方块放置与破坏(完成)
 - 多纹理支持(完成)
-- UI系统(开发中)
-- 存档功能(开发中)
+- UI系统(基本完成)
+- 存档功能(基本完成)
+- 地物放置(开发中)
 - 光照系统(开发中)
 - 音效系统(计划中)
 - 多人联机(计划中)
+
+***注:完成不代表我停止开发，我可能会在后续新增(完善)功能或优化***
 
 ## 🖼️ 运行效果
 
@@ -134,8 +137,6 @@ dotnet run --project TextCraft/TextCraft.csproj
 ## 🙏 致谢
  
 - OpenTK - .NET 平台的 OpenGL 绑定
-
-- ImGui.NET - ImGui 的 .NET 封装
 
 - SixLabors.ImageSharp - C# 图像处理库
 

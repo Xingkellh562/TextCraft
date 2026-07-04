@@ -65,7 +65,7 @@ namespace TextCraft.src.Table
                     -0.16f, 0.2f, -0.16f, 1.0f, 0.0f, 0.0f,
                     0.16f, 0.2f, -0.16f, 0.0f, 0.0f, 0.0f,
                 }
-            }
+            }, "textEntity"
         );
     }
 }

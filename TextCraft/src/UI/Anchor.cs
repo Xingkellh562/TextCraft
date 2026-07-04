@@ -54,12 +54,12 @@ namespace TextCraft.src.UI
             }
 
             component.rect.size = posB - posA;
-            if(component is Spirit spiritComponent)
+            if(component is SpiritComponent spiritComponent)
             {
                 int[] spirit = spiritComponent.spirit ?? new int[4];
                 spiritComponent.GetVertices(posA, posB, spirit);
             }
-            else if (component is Text text)
+            else if (component is TextComponent text)
             {
                 text.ComposeAndGetTextMesh(posA,posB);
             }

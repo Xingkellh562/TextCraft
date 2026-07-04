@@ -15,9 +15,9 @@ namespace TextCraft.src.Core
         private bool _isLoad = false;
 
         public bool IsLoad => _isLoad;
-        public void LoadWorld(int seed)
+        public void LoadWorld(string name,int seed)
         {
-            World = new World(seed);
+            World = new World(name,seed);
 
             World.Load();
             GameRender = new GameRenderer(World);

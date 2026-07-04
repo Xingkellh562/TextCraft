@@ -15,7 +15,9 @@ namespace TextCraft.src.Core.ConsoleModule
         ConcurrentQueue<string> _commandQueue = new();
         public void Load()
         {
-            Console.WriteLine("输入 /LoadWorld [seed] 加载世界");
+            Console.WriteLine("输入 /LoadWorld [name] [seed]");
+            Console.WriteLine("  或 /LoadWorld [name]        加载世界");
+            Console.WriteLine("[seed]参数对于已有存档的世界不会起作用");
             Console.WriteLine("输入 /UnLoadWorld 卸载世界");
 
             Task.Run(async () => {
@@ -34,9 +36,13 @@ namespace TextCraft.src.Core.ConsoleModule
             if (_commandQueue.TryDequeue(out var command))
             {
                 string[] s = command.Split();
-                if (s.Length == 2 && s[0] == "/LoadWorld")
+                if (s.Length >= 2 && s[0] == "/LoadWorld")
                 {
-                    EventMgr.Ins.Publish(new LoadWorldEventArg() { seed = int.Parse(s[1]) });
+                    int seed = 0;
+                    if (s.Length == 3)
+                        seed = int.Parse(s[2]);
+
+                    EventMgr.Ins.Publish(new LoadWorldEventArg() { name = s[1],seed = seed });
                     
                     //this.WindowState = WindowState.Fullscreen;
                 }

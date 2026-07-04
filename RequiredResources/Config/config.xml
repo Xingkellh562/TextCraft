@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ConfigMgr xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <gameConfig>
+    <SeaLevel>0</SeaLevel>
+    <ChunkSizeX>32</ChunkSizeX>
+    <ChunkSizeY>32</ChunkSizeY>
+    <ChunkSizeZ>32</ChunkSizeZ>
+    <PoolMaxCapacity>2048</PoolMaxCapacity>
+  </gameConfig>
+  <graphicConfig>
+    <fog>true</fog>
+    <ViewRange>192</ViewRange>
+  </graphicConfig>
+</ConfigMgr>

@@ -84,12 +84,12 @@ namespace TextCraft.src.UI
         }
     }
 
-    public class Spirit : UIComponent
+    public class SpiritComponent : UIComponent
     {
         public int[]? spirit = new int[4] { 0, 0, 1, 1 };
 
         public readonly UIRectMesh rectMesh;
-        public Spirit(Rect rect) : base(rect)
+        public SpiritComponent(Rect rect) : base(rect)
         {
             rectMesh = new UIRectMesh(new float[] { });
         }
@@ -116,13 +116,13 @@ namespace TextCraft.src.UI
         }
     }
 
-    public class Text : UIComponent
+    public class TextComponent : UIComponent
     {
         public string Content { get; private set; } = "";
 
         public readonly UIRectMesh textMesh;
-        public Text(Rect rect) : base(rect) { textMesh = new(new float[] { }); }
-        public Text(Rect rect,string content) : base(rect)
+        public TextComponent(Rect rect) : base(rect) { textMesh = new(new float[] { }); }
+        public TextComponent(Rect rect,string content) : base(rect)
         {
             this.Content = content;
             textMesh = new(new float[] { });

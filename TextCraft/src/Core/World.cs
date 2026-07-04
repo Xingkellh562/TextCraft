@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Core.EntityModule;
 using TextCraft.src.Core.Input;
 using TextCraft.src.Core.Physic;
+using TextCraft.src.Core.Save;
 using TextCraft.src.Rendering;
 using TextCraft.src.Rendering.EntityRender;
 using TextCraft.src.Table;
@@ -18,12 +20,16 @@ namespace TextCraft.src.Core
 {
     internal class World : IDisposable
     {
+        public string Name { get; set; } = "";
+
         public GridMgr gridMgr = new GridMgr();
         public ChunkDataMgr chunkDataMgr = new ChunkDataMgr();
+        public ChunkStorage chunkStorage;
+
         public ChunkUpdateMgr chunkUpdateMgr;
 
-        public Vector3 playerPos = new Vector3();
-        public Vector3 playerDir = new Vector3();
+        public Vector3 playerPos = new Vector3(0,90,0);
+        public Vector3 playerDir = new Vector3(0,0,1);
 
         public InputMgr inputMgr = new InputMgr();
 
@@ -39,10 +45,32 @@ namespace TextCraft.src.Core
         public int Seed => _seed;
 
         public float GameTime = 0;
-        public World(int seed = 0) 
+        public World(string name,int seed = 0) 
         {
+            Name = name;
             _seed = seed;
-            chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr,seed);
+            chunkStorage = new(AppContext.BaseDirectory + $"Save//{Name}");
+
+            LoadData(Path.Combine(AppContext.BaseDirectory + $"Save//{Name}//worldData.xml"));
+
+            chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr, chunkStorage, _seed);
+        }
+
+        public void Save(string path,WorldLoadData data)
+        {
+            var xs = new XmlSerializer(typeof(WorldLoadData));
+            using var fs = new FileStream(path, FileMode.Create);
+            xs.Serialize(fs, data);
+        }
+        public void LoadData(string path)
+        {
+            if(!File.Exists(path)) return;
+            var xs = new XmlSerializer(typeof(WorldLoadData));
+            using var fs = new FileStream(path, FileMode.Open);
+            var data = (WorldLoadData?)xs.Deserialize(fs) ?? new WorldLoadData();
+            Vector3 cameraPos = new Vector3(data.cameraPosX,data.cameraPosY,data.cameraPosZ);
+            Vector3 cameraDir = new Vector3(data.cameraDirX, data.cameraDirY, data.cameraDirZ);
+            playerPos = cameraPos; playerDir = cameraDir;_seed = data.seed;
         }
 
         public void Load()
@@ -52,6 +80,7 @@ namespace TextCraft.src.Core
             gridMgr.AddNewLayers("Entity");
 
             chunkUpdateMgr.StartChunkUpdate();
+            
             LoadPlayer();
 
             //AddEntity(new Vector3(0, 90, 5), 1);
@@ -60,6 +89,17 @@ namespace TextCraft.src.Core
 
         public void UnLoad()
         {
+            WorldLoadData data = new() {cameraPosX = playerPos.X,
+                                        cameraPosY = playerPos.Y,
+                                        cameraPosZ = playerPos.Z,
+                                        cameraDirX = playerDir.X,
+                                        cameraDirY = playerDir.Y,
+                                        cameraDirZ = playerDir.Z,
+                                        seed = _seed };
+            Save(Path.Combine(AppContext.BaseDirectory + $"Save//{Name}//worldData.xml"), data);
+            foreach(var chunkPos in chunkDataMgr.Chunks.Keys)
+                chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
+            chunkUpdateMgr.StopChunkUpdate();
             Dispose(true);
         }
         public void Update(float updateTime)
@@ -188,7 +228,7 @@ namespace TextCraft.src.Core
         {
             EntityObject entityObject = new EntityObject() { name = "Xingkellh",typeName = "Player", type = EntityType.living };
             Moving moving = new Moving() {moveSpeed = 128,flyingSpeed = 256,jumpForce = 16};
-            Transform playerTrans = new Transform() { position = new Vector3(0, 90,0), rotation = new Vector3(0, 0, 1) };
+            Transform playerTrans = new Transform() { position = playerPos, rotation = playerDir };
             RigidBody body = new RigidBody(50);
             Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
             Camera camera = new Camera();
@@ -282,5 +322,14 @@ namespace TextCraft.src.Core
             ecsMgr.AddComponent(id, box);
             ecsMgr.AddComponent(id, model);
         }
+    }
+
+    public class WorldLoadData()
+    {
+        public float cameraPosX, cameraPosY, cameraPosZ;
+        public float cameraDirX, cameraDirY, cameraDirZ;
+        public int seed;
+
+
     }
 }
