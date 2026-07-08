@@ -26,7 +26,7 @@ namespace TextCraft.src.Core.Physic
 
                 if (body.useGravity)
                 {
-                    body.acceleration.Y = -9.8f * 8;
+                    body.acceleration.Y = -9.8f * 4;
                 }
                 else
                 {

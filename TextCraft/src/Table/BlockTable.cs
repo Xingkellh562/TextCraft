@@ -116,7 +116,7 @@ namespace TextCraft.src.Table
 
         public QuadFace[] Model { get; set; } = new QuadFace[0];
 
-        public Vector3 damp = new Vector3(0.25f, 0.05f, 0.25f);
+        public Vector3 damp = new Vector3(0.1f, 0.02f, 0.1f);
         public bool IsLucency { get; set; } = false;
         public Block()
         {

@@ -40,6 +40,7 @@ namespace TextCraft.src.Rendering
             _position = Vector3.Zero;
         }
 
+
         public void GetVertexObject()
         {
             vao = GL.GenVertexArray();
@@ -67,7 +68,7 @@ namespace TextCraft.src.Rendering
             if (newPos.HasValue) _position = newPos.Value;
             // 注意：VAO/VBO 保持不变！isLoad 依然为 true
             isUpdate = false;
-        }
+        }      
 
         // 更新顶点数据（池化复用时不重新生成 VAO/VBO，只更新 Buffer）
         public void UpdateVertices()

@@ -10,7 +10,7 @@ using TextCraft.src.Core.Config;
 
 namespace TextCraft.src.Rendering
 {
-    internal abstract class BaseShader
+    public abstract class BaseShader
     {
         protected int _vao;
         protected int _vbo;

@@ -210,7 +210,7 @@ namespace TextCraft.src.Tools
                                     vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 2] + z);
                                     vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 3]);
                                     vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 4]);
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 5]);
+                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 5] + 1);
                                 }
                             }
                         }

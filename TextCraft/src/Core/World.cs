@@ -8,6 +8,7 @@ using System.Xml.Serialization;
 using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Core.EntityModule;
+using TextCraft.src.Core.Event;
 using TextCraft.src.Core.Input;
 using TextCraft.src.Core.Physic;
 using TextCraft.src.Core.Save;
@@ -54,6 +55,8 @@ namespace TextCraft.src.Core
             LoadData(Path.Combine(AppContext.BaseDirectory + $"Save//{Name}//worldData.xml"));
 
             chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr, chunkStorage, _seed);
+
+            EventMgr.Ins.Subscribe(typeof(PlayerTpEventArg),arg => OnPlayerTp(arg as PlayerTpEventArg ?? new PlayerTpEventArg() { pos = playerPos}));
         }
 
         public void Save(string path,WorldLoadData data)
@@ -101,6 +104,17 @@ namespace TextCraft.src.Core
                 chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
             chunkUpdateMgr.StopChunkUpdate();
             Dispose(true);
+        }
+
+        public void OnPlayerTp(PlayerTpEventArg e)
+        {
+            foreach (var entity in ecsMgr.GetEntitiesWith(new Type[] { typeof(Transform), typeof(Camera) }))
+            {
+                var trans = ecsMgr.GetComponent<Transform>(entity);
+                playerPos = e.pos;
+                trans.position = playerPos;
+                ecsMgr.AddComponent(entity, trans);
+            }
         }
         public void Update(float updateTime)
         {
@@ -227,7 +241,7 @@ namespace TextCraft.src.Core
         void LoadPlayer()
         {
             EntityObject entityObject = new EntityObject() { name = "Xingkellh",typeName = "Player", type = EntityType.living };
-            Moving moving = new Moving() {moveSpeed = 128,flyingSpeed = 256,jumpForce = 16};
+            Moving moving = new Moving() {moveSpeed = 32,flyingSpeed = 96,jumpForce = 10};
             Transform playerTrans = new Transform() { position = playerPos, rotation = playerDir };
             RigidBody body = new RigidBody(50);
             Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));

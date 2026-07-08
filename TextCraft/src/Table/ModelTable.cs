@@ -3,16 +3,72 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using TextCraft.src.Core;
 using TextCraft.src.Core.Config;
+using System.Collections.Generic;
 
 namespace TextCraft.src.Table
 {
+
+
+    /// <summary>
+    /// 用于交错数组 T[][] 的转换器，使内层数组序列化为单行，外层数组保持整体缩进。
+    /// </summary>
+    public class JaggedArrayConverter<T> : JsonConverter<T[][]>
+    {
+        // 用于内层数组序列化的选项（不缩进）
+        private static readonly JsonSerializerOptions _innerOptions = new()
+        {
+            WriteIndented = false
+        };
+
+        // 反序列化（标准读取，因为写入格式仍是合法的 JSON）
+        public override T[][] Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType != JsonTokenType.StartArray)
+                throw new JsonException("Expected start of array");
+
+            var result = new List<T[]>();
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndArray)
+                    break;
+
+                // 读取内层数组（由于类型是 T[]，不会递归调用本转换器）
+                T[]? inner = JsonSerializer.Deserialize<T[]>(ref reader, options);
+                result.Add(inner ?? new T[0]);
+            }
+            return result.ToArray();
+        }
+
+        // 序列化
+        public override void Write(Utf8JsonWriter writer, T[][] value, JsonSerializerOptions options)
+        {
+            writer.WriteStartArray();  // 外层数组开始
+
+            foreach (var inner in value)
+            {
+                writer.WriteStartArray();
+                foreach (var count in inner)
+                {
+                    // 将内层数组序列化为不带缩进的 JSON 字符串
+                    string countJson = JsonSerializer.Serialize(count, _innerOptions);
+                    writer.WriteRawValue(countJson); // 直接写入原始 JSON
+                }
+                writer.WriteEndArray();
+            }
+
+            writer.WriteEndArray();  // 外层数组结束
+        }
+    }
     public class Model
     {
         public string Name { get; set; } = "";
+        [JsonInclude]
         public float[][] faces = new float[][] {} ;
 
         public Model(float[][] faces,string name)
@@ -351,22 +407,28 @@ namespace TextCraft.src.Table
 
         public ModelTable()
         {
-            Load(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\Tables\\modelTable.xml"));
+            Load(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\Tables\\modelTable.json"));
         }
 
         public void Save(string path)
         {
             List<Model> modelList = models.Values.ToList();
-            var xs = new XmlSerializer(typeof(List<Model>));
-            using var fs = new FileStream(path, FileMode.Create);
-            xs.Serialize(fs, modelList);
+            var options = new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                Converters = {new JaggedArrayConverter<float>()}
+            };
+            string jsonString = JsonSerializer.Serialize(modelList, options);
+            File.WriteAllText(path, jsonString);
         }
 
         public void Load(string path)
         {
-            var xs = new XmlSerializer(typeof(List<Model>));
-            using var fs = new FileStream(path, FileMode.Open);
-            var modelList = (List<Model>?)xs.Deserialize(fs) ?? new List<Model>();
+            string jsonString = File.ReadAllText(path);
+            List<Model> modelList = JsonSerializer.Deserialize<List<Model>>(jsonString) ?? new();
+            //var xs = new XmlSerializer(typeof(List<Model>));
+            //using var fs = new FileStream(path, FileMode.Open);
+            //var modelList = (List<Model>?)xs.Deserialize(fs) ?? new List<Model>();
             foreach ( var model in modelList )
                 models.Add(model.Name, model);
         }

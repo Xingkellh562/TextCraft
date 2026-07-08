@@ -177,6 +177,7 @@ namespace TextCraft.src.Core.ChunkModule
 
             if (!_gridMgr.grids["lucency"].ContainsKey(chunkPos) && grid2?.vertices?.Length == 0)
                 grid2.Dispose();
+
         }
 
         private void DeleteRanderChunk(Vector3i chunkPos)

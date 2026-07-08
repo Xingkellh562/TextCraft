@@ -21,6 +21,7 @@ using TextCraft.src.Rendering.UI;
 using TextCraft.src.Table;
 using TextCraft.src.Tools;
 using TextCraft.src.UI;
+using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
 
 namespace TextCraft.src.Core
 {
@@ -57,6 +58,8 @@ namespace TextCraft.src.Core
             uIMgr.Load();
             consoleMgr.Load();
 
+            while (GL.GetError() != ErrorCode.NoError) { }
+
             uIMgr.uITable["gamePanel"].Sleep();
             uIMgr.uITable["mainMenuPanel"].Wake();
             uIMgr.uITable["mainMenuText"].Wake();
@@ -68,6 +71,7 @@ namespace TextCraft.src.Core
             string name = arg.name;
             _seed = arg.seed;
 
+
             Console.WriteLine("准备创建世界");
             
             gameStateMgr.SwitchState(GameState.InGame);
@@ -76,7 +80,7 @@ namespace TextCraft.src.Core
 
             session.GameRender?.OnSizeChange(Size);
             session.LoadWorld(name,_seed);
-            WindowState = WindowState.Maximized;
+            //WindowState = WindowState.Maximized;
         }
 
         public void OnUnLoadWorld(UnLoadWorldEventArg arg)
@@ -105,7 +109,6 @@ namespace TextCraft.src.Core
 
             consoleMgr.Update();
 
-            //Console.Clear();
             if(uIMgr.uITable["mainMenuText"] is TextComponent fps && _time > 1)
             {
                 fps.ChangeContent("FPS: " + (int)(1.0f / UpdateTime));
@@ -113,7 +116,6 @@ namespace TextCraft.src.Core
             }
 
             _time += (float)UpdateTime;
-            //Console.WriteLine("FPS: " + 1 / UpdateTime);
             //Console.WriteLine("Time: " + session.World != null ? (int)session.World.GameTime:0);
         }
         protected override void OnResize(ResizeEventArgs e)
@@ -269,12 +271,12 @@ namespace TextCraft.src.Core
                     if (e.OffsetY > 0)
                     {
                         input.nowBlock -= 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 10);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 11);
                     }
                     else if (e.OffsetY < 0)
                     {
                         input.nowBlock += 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 10);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 11);
                     }
                     nowBlock = input.nowBlock;
                     world.ecsMgr.AddComponent(entity, input);
