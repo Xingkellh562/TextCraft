@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.UI;
 using static System.Collections.Specialized.BitVector32;
+using OpenTK.Graphics.OpenGL4;
 
 namespace TextCraft.src.Core
 {
@@ -31,17 +32,16 @@ namespace TextCraft.src.Core
 
             if (state == GameState.MainMenu)
             {
-                //GL.ClearColor(0, 0, 0, 0);
+                GL.ClearColor(0, 0, 0, 0);
                 game.uIMgr.uITable["gamePanel"].Sleep();
                 game.uIMgr.uITable["mainMenuPanel"].Wake();
             }
             else
             {
-                game.uIMgr.uITable["gamePanel"].Wake();
+                //game.uIMgr.uITable["gamePanel"].Wake();
+                game.uIMgr.uITable["loadingPanel"].Wake();
                 game.uIMgr.uITable["mainMenuPanel"].Sleep();
             }
-
-            game.uIMgr.uITable.OnSizeChange(game.Size);
         }
     }
 }

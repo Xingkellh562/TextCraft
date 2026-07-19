@@ -130,7 +130,7 @@ namespace TextCraft.src.Rendering.OIT
 
             GL.Viewport(0, 0, _size.X, _size.Y);
 
-            GL.ClearBuffer(ClearBuffer.Color, 0, new float[]  { 0, 0, 0, 0 });
+            GL.ClearBuffer(ClearBuffer.Color, 0, new float[]  { 0,0,0, 0 });
             GL.ClearBuffer(ClearBuffer.Color, 1, new float[] { 1, 0, 0, 0 });
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);

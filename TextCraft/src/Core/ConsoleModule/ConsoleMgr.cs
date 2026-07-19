@@ -62,6 +62,10 @@ namespace TextCraft.src.Core.ConsoleModule
                         Console.WriteLine("错误指令");
                     }
                 }
+                else if (s.Length == 2 && s[0] == "/BuildTeature")
+                {
+                    EventMgr.Ins.Publish(new TeatureBulidEventArg());
+                }
             }
         }
     }

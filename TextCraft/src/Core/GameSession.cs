@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.Rendering;
+using static System.Collections.Specialized.BitVector32;
 
 namespace TextCraft.src.Core
 {
@@ -23,7 +24,6 @@ namespace TextCraft.src.Core
             GameRender = new GameRenderer(World);
 
             GameRender.Load();
-
             _isLoad = true;
         }
 

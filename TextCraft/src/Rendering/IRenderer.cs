@@ -22,7 +22,7 @@ namespace TextCraft.src.Rendering
         //用于画面渲染的函数
         public void Draw();
 
-        public void GetCamera(Vector3 pos,Vector3 dir);
+        public void GetCamera(Vector3d pos,Vector3d dir);
 
         public void OnSizeChange(Vector2i size);
     }
@@ -35,8 +35,8 @@ namespace TextCraft.src.Rendering
 
         Vector2i _size = new Vector2i();
 
-        Vector3 cameraPos = new Vector3();
-        Vector3 cameraDir = new Vector3();
+        Vector3d cameraPos = new Vector3d();
+        Vector3d cameraDir = new Vector3d();
 
         World world;
         public Vector3 ClearColor { get; set; } = new Vector3(0.6f, 0.7f, 1);
@@ -74,19 +74,19 @@ namespace TextCraft.src.Rendering
             GL.Enable(EnableCap.Multisample);
             GL.DepthMask(true);
 
-            shader.GetMatrix(cameraPos, cameraDir, _size);
+            shader.GetMatrix(cameraPos, (Vector3)cameraDir, _size);
             OITShader oITShader = context.OitShader;
-            oITShader.GetMatrix(cameraPos, cameraDir, _size);
+            oITShader.GetMatrix(cameraPos, (Vector3)cameraDir, _size);
 
             if (ConfigMgr.Ins.graphicConfig.fog)
             {
                 shader.SetFog(ClearColor, ConfigMgr.Ins.graphicConfig.ViewRange - 48, ConfigMgr.Ins.graphicConfig.ViewRange);
-                oITShader.SetFog(ClearColor * 0.7f, ConfigMgr.Ins.graphicConfig.ViewRange - 48, ConfigMgr.Ins.graphicConfig.ViewRange);
+                oITShader.SetFog(ClearColor * 0.82f, ConfigMgr.Ins.graphicConfig.ViewRange - 48, ConfigMgr.Ins.graphicConfig.ViewRange);
             }
             if (world.chunkDataMgr.GetBlock((int)cameraPos.X, (int)cameraPos.Y, (int)cameraPos.Z) == 144)
             {
                 shader.SetFog(new Vector3(0.2f, 0.4f, 0.8f), 4, 16);
-                oITShader.SetFog(new Vector3(0.2f, 0.4f, 0.8f), 4, 16);
+                oITShader.SetFog(new Vector3(0.2f, 0.4f, 0.8f) * 0.82f, 4, 16);
                 GL.ClearColor(0.2f, 0.4f, 0.8f, 1.0f);
             }
             else
@@ -126,7 +126,7 @@ namespace TextCraft.src.Rendering
             //    Console.WriteLine($"绘制透明物体时发生OpenGL错误: {error}");
         }
 
-        public void GetCamera(Vector3 pos, Vector3 dir)
+        public void GetCamera(Vector3d pos, Vector3d dir)
         {
             cameraDir = dir;
             cameraPos = pos;

@@ -9,8 +9,8 @@ namespace TextCraft.src.Core.EntityModule
 {
     internal struct Transform
     {
-        public Vector3 position; 
+        public Vector3d position; 
 
-        public Vector3 rotation;
+        public Vector3d rotation;
     }
 }

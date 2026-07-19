@@ -10,25 +10,26 @@ using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Table;
 
-namespace TextCraft.src.Tools
+namespace TextCraft.src.Tools.Terrain
 {
-    internal class TerrainGenerator
+    internal class MainTerrainGenerator:BaseTerrainGenerator
     {
         private readonly PerlinNoise _heightNoise;
         private readonly PerlinNoise _detailNoise;
         private readonly PerlinNoise _rangeNoise;
         private readonly PerlinNoise _humidityNoise;
-        private readonly int _seed;
+
+        private readonly TeatureGenerator _teatureGenerator;
 
         private Random _random;
 
         int _offsetX = 0;
         int _offsetZ = 0;
 
-        public TerrainGenerator(int seed)
+        public MainTerrainGenerator(int seed):base(seed)
         {
-            _seed = seed;
             _heightNoise = new PerlinNoise(seed);
+            _teatureGenerator = new TeatureGenerator(seed);
             _detailNoise = new PerlinNoise(seed + 1);
             _rangeNoise = new PerlinNoise(seed + 2);
             _humidityNoise = new PerlinNoise(seed + 3);
@@ -40,35 +41,32 @@ namespace TextCraft.src.Tools
         /// <summary>
         /// 获取世界坐标 (x, z) 处的地面高度（整数）
         /// </summary>
-        public int GetHeight(int worldX, int worldZ, Vector3 range)
+        private int GetHeight(int worldX, int worldZ, Vector3 range)
         {
-            // 低频主地形（幅度 64，频率 0.005）
+            // 低频主地形
             float main = (float)_heightNoise.Noise((worldX + _offsetX) * 0.01f, (worldZ + _offsetZ) * 0.01f);
-            // 叠加中频起伏（幅度 16，频率 0.02）
-            float mid = (float)_heightNoise.Noise((worldX + _offsetX) * 0.04f, (worldZ + _offsetZ) * 0.04f) * 0.05f;
-            // 叠加高频细节（幅度 4，频率 0.1）
+            // 叠加中频起伏
+            float mid = (float)_heightNoise.Noise((worldX + _offsetX) * 0.04f, (worldZ + _offsetZ) * 0.04f);
+            // 叠加高频细节
             float detail = (float)_detailNoise.Noise((worldX + _offsetX) * 0.2f, (worldZ + _offsetZ) * 0.2f) * 0.2f;
 
             float height = main * range.X + mid * range.Y + detail * range.Z;
             // 增加海平面基线（比如 Y=0 为海平面）
             return (int)(height + 32f);
         }
-
-        public float[] GetHumidity(int worldX, int worldZ)
+        private float[] GetHumidity(int worldX, int worldZ)
         {
             return new float[] { (float)_humidityNoise.Noise((worldX+_offsetX-16) * 0.001, (worldZ+_offsetZ-16) * 0.001),
                                  (float)_humidityNoise.Noise((worldX+_offsetX+16) * 0.001, (worldZ+_offsetZ-16) * 0.001),
                                  (float)_humidityNoise.Noise((worldX+_offsetX+16) * 0.001, (worldZ+_offsetZ+16) * 0.001),
                                  (float)_humidityNoise.Noise((worldX+_offsetX-16) * 0.001, (worldZ+_offsetZ+16) * 0.001)};
         }
-
-        public float GetRange(int worldX, int worldZ)
+        private float GetRange(int worldX, int worldZ)
         {
             float value = ((float)_rangeNoise.Noise((worldX + _offsetX) * 0.002f, (worldZ + _offsetZ) * 0.002f) + 1);
             return value * value * 32;
         }
-
-        public int GetBlockType(int worldY, int surfaceHeight, int stoneHeight,Biome biome)
+        private int GetBlockType(int worldY, int surfaceHeight, int stoneHeight,Biome biome)
         {
             if (worldY > stoneHeight && worldY > surfaceHeight)
             {
@@ -89,12 +87,13 @@ namespace TextCraft.src.Tools
             if (worldY > stoneHeight) return biome.SoilBlock;
             return biome.StoneBlock;
         }
-        public Chunk BuildChunk(Chunk chunk,Vector3i chunkPos)
+        public override Chunk BuildChunk(Chunk chunk,Vector3i chunkPos)
         {
             int sizeX = ConfigMgr.Ins.gameConfig.ChunkSizeX;
             int sizeY = ConfigMgr.Ins.gameConfig.ChunkSizeY;
             int sizeZ = ConfigMgr.Ins.gameConfig.ChunkSizeZ;
 
+            var teatureNodes = _teatureGenerator.Get2DTeature(chunkPos.X,chunkPos.Z);
             
             for (int x = 0; x < sizeX; x++)
             {
@@ -104,23 +103,24 @@ namespace TextCraft.src.Tools
                     int trueZ = z + chunkPos.Z * sizeZ;
 
                     int index = _random.Next(0,4);
-                    Biome biome = BiomeTable.Ins.FindBiome(GetHumidity(trueX, trueZ)[index]);
+                    float[] humiditys = GetHumidity(trueX, trueZ);
+                    Biome biome = BiomeTable.Ins.FindBiome(humiditys[index]);
 
                     float height = GetRange(trueX,trueZ);
 
                     Vector3 range = new Vector3(height, height / 4, height / 16);
 
                     int surface = GetHeight(trueX, trueZ, range);
+                    _teatureGenerator.SetArgs(surface);
                     for (int y = 0; y < sizeY; y++)
                     {
                         int trueY = y + chunkPos.Y * sizeY;
 
                         chunk[x,y,z] = GetBlockType(trueY, surface, surface - 5,biome);
+                        int block = _teatureGenerator.GetTeatureBlock(trueX, trueY, trueZ, teatureNodes);
+                        if (block != 0)
+                            chunk[x, y, z] = block;
 
-                        //if (trueX == 1 && trueZ == 1 && trueY == 118)
-                        //    chunk[x, y, z] = 80;
-                        //if (trueX == 1 && trueZ == 3 && trueY == 118)
-                        //    chunk[x, y, z] = 96;
                     }
                 }
             }

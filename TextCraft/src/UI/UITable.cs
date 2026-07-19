@@ -38,26 +38,34 @@ namespace TextCraft.src.UI
             Rect menuTextRect = new Rect(0, 48, 512, 32) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
             Rect displayRect = new Rect(0, 128, 192, 192) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
             Rect displayBlockRect = new Rect(40, 40, 112, 112) { UpperLeftPoint = AnchorPoint.UpperLeft, LowerRightPoint = AnchorPoint.None };
+            Rect loadingRect = new Rect(-64, -16, 2048, 32) { UpperLeftPoint = AnchorPoint.Center, LowerRightPoint = AnchorPoint.Center };
 
             var gamePanel = new Panel(gameRect);
+            var loadingPanel = new SpiritComponent(gameRect);
             var sight = new SpiritComponent(sightRect);
             var mainMenuPanel = new SpiritComponent(menuRect);
             var mainMenuText = new TextComponent(menuTextRect);
             var displayPanel = new SpiritComponent(displayRect);
             var displayBlock = new SpiritComponent(displayBlockRect);
+            var loadingText = new TextComponent(loadingRect);
 
             mainMenuPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["title"].rect);
             sight.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["sight"].rect);
             displayPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["displayTable"].rect);
             displayBlock.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["1"].rect);
-            mainMenuText.ChangeContent("FPS:");
+            loadingPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["black"].rect);
 
+            mainMenuText.ChangeContent("FPS:");
+            loadingText.ChangeContent("LOADING");
 
             AddComponent(gamePanel, components, "gamePanel");
+            AddComponent(loadingPanel, components, "loadingPanel");
+            AddComponent(loadingText, loadingPanel, "loadingText");
             AddComponent(mainMenuText, components, "mainMenuText");
             AddComponent(mainMenuPanel, components, "mainMenuPanel");
             AddComponent(displayPanel, gamePanel, "displayPanel");
             AddComponent(displayBlock, displayPanel, "displayBlock");
+
             gamePanel.AddSubComponent(sight);
         }
         public void AddComponent(UIComponent component,UIComponent parent, string name)

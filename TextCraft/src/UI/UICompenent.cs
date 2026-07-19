@@ -157,7 +157,7 @@ namespace TextCraft.src.UI
             }
             textMesh.isUpdate = false;
         }
-        public void ComposeAndGetTextMesh(Vector2i posA , Vector2i posB,int spacingX = 2, int spacingY = 2, int size = 24)
+        public void ComposeAndGetTextMesh(Vector2i posA , Vector2i posB,int spacingX = 2, int spacingY = 2, int size = 32)
         {
             truePos = posA;
             ComposeAndGetTextMesh(spacingX, spacingY, size);

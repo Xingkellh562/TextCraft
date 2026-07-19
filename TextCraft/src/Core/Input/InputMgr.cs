@@ -29,7 +29,7 @@ namespace TextCraft.src.Core.Input
 
             return time * speed * axis;
         }
-        public Vector3 MoveUpdate(float time,float speed,Vector3 playerDir, bool useGravity, ref InputComponent input) =>
+        public Vector3d MoveUpdate(float time,float speed,Vector3 playerDir, bool useGravity, ref InputComponent input) =>
             (playerDir * new Vector3(1,0,1)).Normalized() * UpdateAxis(time, speed,ref input.axisZ, input.forward, input.back, input) 
           +Vector3.Cross(playerDir, Vector3.UnitY).Normalized() * UpdateAxis(time,speed, ref input.axisX, input.right, input.left, input)
           + (!useGravity ? Vector3.UnitY * UpdateAxis(time, speed, ref input.axisY, input.up, input.down, input) : Vector3.Zero);

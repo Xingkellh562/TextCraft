@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenTK.Mathematics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace TextCraft.src.Rendering.EntityRender
                 var trans = world.ecsMgr.GetComponent<Transform>(entity);
                 //world.gridMgr.grids["Entity"][model.posIndex].Pos += new OpenTK.Mathematics.Vector3(0,0,0.005f);
                 //Console.WriteLine(world.gridMgr.grids["Entity"][model.posIndex].Pos);
-                world.gridMgr.grids["Entity"][model.posIndex].Pos = trans.position;
+                world.gridMgr.grids["Entity"][model.posIndex].Pos = (Vector3)trans.position;
 
             }
         }

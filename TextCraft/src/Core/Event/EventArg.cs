@@ -23,6 +23,12 @@ namespace TextCraft.src.Core.Event
 
     public class PlayerTpEventArg : EventArg
     {
-        public Vector3 pos;
+        public Vector3d pos;
     }
+
+    public class TeatureBulidEventArg : EventArg
+    {}
+
+    public class WorldLoadingFinishEventArg : EventArg
+    {}
 }

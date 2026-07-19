@@ -50,6 +50,7 @@ namespace TextCraft.src.Core
             gameStateMgr = new(this);
             EventMgr.Ins.Subscribe(typeof(LoadWorldEventArg),arg => OnLoadWorld(arg as LoadWorldEventArg ?? new()));
             EventMgr.Ins.Subscribe(typeof(UnLoadWorldEventArg), arg => OnUnLoadWorld(arg as UnLoadWorldEventArg ?? new()));
+            EventMgr.Ins.Subscribe(typeof(WorldLoadingFinishEventArg), arg => OnFinishLoadWorld(arg as WorldLoadingFinishEventArg ?? new()));
         }
 
         protected override void OnLoad()
@@ -61,6 +62,7 @@ namespace TextCraft.src.Core
             while (GL.GetError() != ErrorCode.NoError) { }
 
             uIMgr.uITable["gamePanel"].Sleep();
+            uIMgr.uITable["loadingPanel"].Sleep();
             uIMgr.uITable["mainMenuPanel"].Wake();
             uIMgr.uITable["mainMenuText"].Wake();
         }
@@ -80,13 +82,19 @@ namespace TextCraft.src.Core
 
             session.GameRender?.OnSizeChange(Size);
             session.LoadWorld(name,_seed);
-            //WindowState = WindowState.Maximized;
+            WindowState = WindowState.Maximized;
         }
 
         public void OnUnLoadWorld(UnLoadWorldEventArg arg)
         {
             Console.WriteLine("准备卸载世界");
             gameStateMgr.SwitchState(GameState.MainMenu);
+        }
+
+        public void OnFinishLoadWorld(WorldLoadingFinishEventArg e)
+        {
+            uIMgr.uITable["loadingPanel"].Sleep();
+            uIMgr.uITable["gamePanel"].Wake();
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {

@@ -12,7 +12,8 @@ namespace TextCraft.src.Rendering
     internal class GameShader:BaseShader
     {
         private Matrix4 _viewMatrix;
-        private Vector3 _chunkPosition;
+        private Vector3d _chunkPosition;
+        private Vector3d _cameraPos;
 
         //顶点着色器
         protected override string VertexShaderSource => @"
@@ -31,7 +32,7 @@ namespace TextCraft.src.Rendering
 
             void main()
             {
-                vec4 viewPos = view * vec4(aPos+chunkPos , 1.0);
+                vec4 viewPos = view * vec4(aPos + chunkPos , 1.0);
                 gl_Position = projection * viewPos;
                 
                 viewDistance = sqrt(viewPos.z*viewPos.z+viewPos.y*viewPos.y+viewPos.x*viewPos.x);
@@ -61,17 +62,18 @@ namespace TextCraft.src.Rendering
                 FragColor = vec4(finalColor,t.a);
             }";
         
-        public void GetMatrix(Vector3 cameraPos, Vector3 cameraDir, Vector2i size)
+        public void GetMatrix(Vector3d cameraPos, Vector3 cameraDir, Vector2i size)
         {
             
             GL.UseProgram(_program);
+            _cameraPos = cameraPos;
             float aspectRatio = (float)size.X / size.Y;
             _projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60f),
                                                                     aspectRatio,
                                                                     0.1f,
                                                                     1000f
                                                                     );
-            _viewMatrix = Matrix4.LookAt(cameraPos, cameraPos + cameraDir, Vector3.UnitY);
+            _viewMatrix = Matrix4.LookAt(Vector3.Zero, cameraDir, Vector3.UnitY);
             int location = GL.GetUniformLocation(_program, "projection");
             GL.UniformMatrix4(location, false, ref _projectionMatrix);
 
@@ -103,7 +105,8 @@ namespace TextCraft.src.Rendering
             GL.Uniform1(textureLocation, 0);
 
             int location4 = GL.GetUniformLocation(_program, "chunkPos");
-            GL.Uniform3(location4, _chunkPosition);
+            Vector3 pos = (Vector3)(_chunkPosition - _cameraPos);
+            GL.Uniform3(location4, pos);
 
             GL.BindVertexArray(_vao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, _vertexCount/6);

@@ -19,7 +19,7 @@ namespace TextCraft.src.Core.Event
                 events[typeof(T)].Invoke(args);
             }
             else
-                Console.WriteLine("找不到对应事件，请优先订阅");
+                Console.WriteLine("执行失败");
         }
 
         public void Subscribe(Type type,Action<EventArg> action)

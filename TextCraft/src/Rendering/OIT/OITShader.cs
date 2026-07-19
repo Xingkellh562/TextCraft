@@ -12,7 +12,8 @@ namespace TextCraft.src.Rendering.OIT
     internal class OITShader : BaseShader
     {
         private Matrix4 _viewMatrix;
-        private Vector3 _chunkPosition;
+        private Vector3d _chunkPosition;
+        private Vector3d _cameraPos;
 
         //顶点着色器
         protected override string VertexShaderSource => @"
@@ -32,7 +33,7 @@ namespace TextCraft.src.Rendering.OIT
 
             void main()
             {
-                vec4 viewPos = view * vec4(aPos+chunkPos , 1.0);
+                vec4 viewPos = view * vec4(aPos + chunkPos, 1.0);
                 gl_Position = projection * viewPos;
                 depth = gl_Position.z;
                 
@@ -58,37 +59,42 @@ namespace TextCraft.src.Rendering.OIT
 
             float ComputeWeight(float z, float alpha)
             {
-                return clamp(pow(1.0 - z,3.0) * 15000 * alpha,0.01,3e3);
+                return clamp(pow(1 - z,1.0) * alpha,0.01,3e3);
             }
 
             void main()
             {
+                
                 vec4 t = texture(ourTexture,TexCoord);
                 vec3 lib = t.rgb * ao;
+                
                 float fogFactor = clamp((viewDistance - fogStart)/(fogEnd-fogStart),0.0,1.0);
                 vec3 finalColor = mix(lib,fogColor,fogFactor);
-                float alpha = t.a;
+
+                float alpha = t.a ;
    
-                float z = gl_FragCoord.z;
+                float z = 20 / (1000.01 - (gl_FragCoord.z * 2.0 - 1.0) * 999.99);
+                
                 float weight = ComputeWeight(z, alpha);
 
                 accumColor = vec4(finalColor * alpha * weight,weight* alpha);
                 revealColor = alpha;
-                //accumColor = vec4(vec3(gl_FragCoord.w),2.0);
+                //accumColor = vec4(vec3(z),1.0);
                 //revealColor = 1.0;
             }";
 
-        public void GetMatrix(Vector3 cameraPos, Vector3 cameraDir, Vector2i size)
+        public void GetMatrix(Vector3d cameraPos, Vector3 cameraDir, Vector2i size)
         {
 
             GL.UseProgram(_program);
+            _cameraPos = cameraPos;
             float aspectRatio = (float)size.X / size.Y;
             _projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60f),
                                                                     aspectRatio,
                                                                     0.1f,
                                                                     1000f
                                                                     );
-            _viewMatrix = Matrix4.LookAt(cameraPos, cameraPos + cameraDir, Vector3.UnitY);
+            _viewMatrix = Matrix4.LookAt(Vector3.Zero, cameraDir, Vector3.UnitY);
             int location = GL.GetUniformLocation(_program, "projection");
             GL.UniformMatrix4(location, false, ref _projectionMatrix);
 
@@ -119,7 +125,8 @@ namespace TextCraft.src.Rendering.OIT
             GL.Uniform1(textureLocation, 0);
 
             int location4 = GL.GetUniformLocation(_program, "chunkPos");
-            GL.Uniform3(location4, _chunkPosition);
+            Vector3 pos = (Vector3)(_chunkPosition - _cameraPos);
+            GL.Uniform3(location4, pos);
 
             GL.BindVertexArray(_vao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, _vertexCount / 6);

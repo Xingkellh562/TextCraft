@@ -11,6 +11,7 @@ using TextCraft.src.Core.Save;
 //using System.Threading;
 using TextCraft.src.Rendering;
 using TextCraft.src.Tools;
+using TextCraft.src.Tools.Terrain;
 
 namespace TextCraft.src.Core.ChunkModule
 {
@@ -21,9 +22,10 @@ namespace TextCraft.src.Core.ChunkModule
         GridMgr _gridMgr;
         ChunkStorage _chunkStorage;
 
-        TerrainGenerator terrainGenerator;
+        BaseTerrainGenerator terrainGenerator;
 
         bool _chunkUpdateRuning = false;
+
         object _lock = new object();
 
         public Thread updateThread;
@@ -51,7 +53,10 @@ namespace TextCraft.src.Core.ChunkModule
             _chunkMgr = chunkMgr;
             _gridMgr = gridMgr;
             _chunkStorage = chunkStorage;
-            terrainGenerator = new TerrainGenerator(seed);
+            if(seed == 6767)
+                terrainGenerator = new VoidTerrainGenerator(seed);
+            else
+                terrainGenerator = new MainTerrainGenerator(seed);
             updateThread = new Thread(Update);
         }
 

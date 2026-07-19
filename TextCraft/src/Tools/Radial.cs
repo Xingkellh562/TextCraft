@@ -11,7 +11,7 @@ namespace TextCraft.src.Tools
 {
     internal class Radial
     {
-        public static bool RaycastVoxel(ChunkDataMgr world, Vector3 origin, Vector3 dir, float maxDist, out Vector3i hitPos, out float hitDist, out Vector3i normal)
+        public static bool RaycastVoxel(ChunkDataMgr world, Vector3d origin, Vector3d dir, float maxDist, out Vector3i hitPos, out float hitDist, out Vector3i normal)
         {
             hitPos = Vector3i.Zero;
             hitDist = maxDist;

@@ -64,7 +64,7 @@ namespace TextCraft.src.Rendering.UI
             }
         }
 
-        public void GetCamera(Vector3 pos, Vector3 dir) { }
+        public void GetCamera(Vector3d pos, Vector3d dir) { }
 
         public void OnSizeChange(Vector2i size)
         {

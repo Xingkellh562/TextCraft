@@ -29,8 +29,8 @@ namespace TextCraft.src.Core
 
         public ChunkUpdateMgr chunkUpdateMgr;
 
-        public Vector3 playerPos = new Vector3(0,90,0);
-        public Vector3 playerDir = new Vector3(0,0,1);
+        public Vector3d playerPos = new Vector3d(0,90,0);
+        public Vector3d playerDir = new Vector3d(0,0,1);
 
         public InputMgr inputMgr = new InputMgr();
 
@@ -46,6 +46,9 @@ namespace TextCraft.src.Core
         public int Seed => _seed;
 
         public float GameTime = 0;
+        bool _finishLoadWorld = false;
+
+        FeatureBuilder? _featureBuilder;
         public World(string name,int seed = 0) 
         {
             Name = name;
@@ -71,8 +74,8 @@ namespace TextCraft.src.Core
             var xs = new XmlSerializer(typeof(WorldLoadData));
             using var fs = new FileStream(path, FileMode.Open);
             var data = (WorldLoadData?)xs.Deserialize(fs) ?? new WorldLoadData();
-            Vector3 cameraPos = new Vector3(data.cameraPosX,data.cameraPosY,data.cameraPosZ);
-            Vector3 cameraDir = new Vector3(data.cameraDirX, data.cameraDirY, data.cameraDirZ);
+            Vector3d cameraPos = new Vector3d(data.cameraPosX,data.cameraPosY,data.cameraPosZ);
+            Vector3d cameraDir = new Vector3d(data.cameraDirX, data.cameraDirY, data.cameraDirZ);
             playerPos = cameraPos; playerDir = cameraDir;_seed = data.seed;
         }
 
@@ -129,9 +132,9 @@ namespace TextCraft.src.Core
                 var moving = ecsMgr.GetComponent<Moving>(entity);
 
                 if (body.useGravity)
-                    body.velocity += inputMgr.MoveUpdate(updateTime, moving.moveSpeed, trans.rotation,body.useGravity, ref input);
+                    body.velocity += inputMgr.MoveUpdate(updateTime, moving.moveSpeed, (Vector3)trans.rotation,body.useGravity, ref input);
                 else
-                    body.velocity += inputMgr.MoveUpdate(updateTime, moving.flyingSpeed, trans.rotation, body.useGravity, ref input);
+                    body.velocity += inputMgr.MoveUpdate(updateTime, moving.flyingSpeed, (Vector3)trans.rotation, body.useGravity, ref input);
 
                 if (body.onGround && body.useGravity && input.up)
                     body.velocity.Y += moving.jumpForce;
@@ -147,9 +150,9 @@ namespace TextCraft.src.Core
                     input.spaceTimer = 0;
                 }
 
-                Vector4 move = new Vector4(trans.rotation, 0) * inputMgr.MouseMoveX(0.5f,ref input);
-                move *= inputMgr.MouseMoveY(0.5f, trans.rotation, ref input);
-                trans.rotation = new Vector3(move.X, move.Y, move.Z);
+                Vector4 move = new Vector4((Vector3)trans.rotation, 0) * inputMgr.MouseMoveX(0.5f,ref input);
+                move *= inputMgr.MouseMoveY(0.5f, (Vector3)trans.rotation, ref input);
+                trans.rotation = new Vector3d(move.X, move.Y, move.Z);
 
                 inputMgr.LeftMouseButton(this,updateTime ,ref input);
                 inputMgr.RightMouseButton(this,updateTime,box,ref input);
@@ -161,7 +164,7 @@ namespace TextCraft.src.Core
                 ecsMgr.AddComponent(entity, body);
             }
 
-            if(GameTime > 5)
+            if(_finishLoadWorld)
                 physicSystem.Update(this, updateTime);
 
             foreach (var entity in ecsMgr.GetEntitiesWith(new Type[] { typeof(Transform), typeof(Camera) }))
@@ -179,7 +182,7 @@ namespace TextCraft.src.Core
         void CreateRequest()
         {
 
-            List<List<Vector3i>> list = ChunkRangeHelper.GetChunksInRanges(playerPos, new Vector3i(
+            List<List<Vector3i>> list = ChunkRangeHelper.GetChunksInRanges((Vector3)playerPos, new Vector3i(
                 ConfigMgr.Ins.gameConfig.ChunkSizeX,
                 ConfigMgr.Ins.gameConfig.ChunkSizeY,
                 ConfigMgr.Ins.gameConfig.ChunkSizeZ
@@ -236,12 +239,22 @@ namespace TextCraft.src.Core
                 chunkUpdateMgr.RemoveGridCreateRequest(result);
             while (chunkUpdateMgr.gridDeleteFinishQueue.TryDequeue(out Vector3i result))
                 chunkUpdateMgr.RemoveGridDeleteRequest(result);
+
+            if(!_finishLoadWorld && chunkDataMgr.Chunks.Count > 128)
+            {
+                EventMgr.Ins.Publish(new WorldLoadingFinishEventArg());
+                chunkDataMgr.Chunks.TryGetValue(Vector3i.Zero, out var chunk);
+                if(chunk != null)
+                    _featureBuilder = new(chunk);
+                _finishLoadWorld = true;
+            }
+
         }     
 
         void LoadPlayer()
         {
             EntityObject entityObject = new EntityObject() { name = "Xingkellh",typeName = "Player", type = EntityType.living };
-            Moving moving = new Moving() {moveSpeed = 32,flyingSpeed = 96,jumpForce = 10};
+            Moving moving = new Moving() {moveSpeed = 32,flyingSpeed = 96,jumpForce = 11};
             Transform playerTrans = new Transform() { position = playerPos, rotation = playerDir };
             RigidBody body = new RigidBody(50);
             Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
@@ -325,7 +338,7 @@ namespace TextCraft.src.Core
             ModelCompenent model = new ModelCompenent() { posIndex = pos };
 
             Grid grid = LoadModel();
-            grid.Pos = trans.position;
+            grid.Pos = (Vector3)trans.position;
             gridMgr.AddChunkGrids("Entity", model.posIndex, grid);
 
             body.useGravity = true;
@@ -340,8 +353,8 @@ namespace TextCraft.src.Core
 
     public class WorldLoadData()
     {
-        public float cameraPosX, cameraPosY, cameraPosZ;
-        public float cameraDirX, cameraDirY, cameraDirZ;
+        public double cameraPosX, cameraPosY, cameraPosZ;
+        public double cameraDirX, cameraDirY, cameraDirZ;
         public int seed;
 
 
