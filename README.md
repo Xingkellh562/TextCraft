@@ -22,6 +22,7 @@ TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来�
 - 🎯 **物理系统** - 基础的碰撞检测与物理模拟
 - 📦 **资源管理** - 纹理、模型等资源的高效加载与管理
 - 🧩 **数据驱动** - 方块模型与方块种类由 `Config/Tables` 下的 JSON 定义，增删方块无需修改代码
+- 🧱 **外部模型** - 支持 `.obj`(+MTL) 与 `.fbx` 导入，可按名称取得 `Grid` 或直接挂到实体上渲染
 - 🔧 **模块化架构** - 清晰的代码结构，易于扩展和维护
 
 ## 🛠️ 技术栈
@@ -54,17 +55,18 @@ TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来�
  │   │   │   ├── Grid.cs
  │   │   │   ├── GridMgr.cs
  │   │   │   └── IRenderer.cs
- │   │   ├── Table/          # 数据表（从 JSON 加载）
- │   │   │   ├── BlockTable.cs       # 方块元数据与烘焙后的几何
- │   │   │   ├── ModelTable.cs       # 具名模型
- │   │   │   ├── TableLoader.cs      # 启动时统一加载入口
+ │   │   ├── Table/          # 数据表（从 JSON / 外部文件加载）
+ │   │   │   ├── BlockTable.cs        # 方块元数据与烘焙后的几何
+ │   │   │   ├── ModelTable.cs        # 具名方块/实体模型
+ │   │   │   ├── ImportedModelTable.cs # 外部模型（OBJ/FBX）注册与 Grid 查找
+ │   │   │   ├── TableLoader.cs       # 启动时统一加载入口
  │   │   │   └── EntityModelTable.cs
  │   │   ├── Collections/    # 集合工具
- │   │   └── Tools/          # 工具类
+ │   │   └── Tools/          # 工具类（ModelImport/ 为外部模型导入器）
  │   └── TextCraft.csproj    # 项目文件
  ├── RequiredResources/      # 运行期资源（构建时自动同步到输出目录）
  ├── TextCraft.sln           # 解决方案文件
- ├── docs/                   # 开发文档（含 JSON 化改造说明与回滚手册）
+ ├── docs/                   # 开发文档（JSON 化改造、外部模型导入与回滚手册）
  ├── LICENSE.txt             # 许可证
  └── README.md               # 项目说明
 ```
@@ -76,13 +78,35 @@ RequiredResources/
 │   ├── config.xml
 │   └── Tables/
 │       ├── blocks.json          # 方块定义（id/type/名称/类型/模型/图集 tile…）
-│       └── models/*.json        # 模型定义（一个文件一个模型）
-├── Resources/                   # 纹理、字体、UI 图集
+│       ├── imported_models.json # 外部模型注册表（名称→OBJ/FBX/缩放/UV/纹理）
+│       └── models/*.json        # 方块/实体模型定义（一个文件一个模型）
+├── Resources/                   # 纹理、字体、UI 图集、外部模型文件（test_model/，含 fbx/）
 └── Save/                        # 示例存档
 ```
 
 `blocks.json` 与 `models/*.json` 的字段说明、校验规则、改动点与回滚方式见
 [docs/block-model-json-loading.md](docs/block-model-json-loading.md)。
+
+### 🧱 外部模型（OBJ / FBX）导入
+
+- 模型文件（OBJ / FBX）放在 `Resources/test_model`（或配置中的其它 `searchPaths`），支持基础材质纹理/纯色 MTL（无贴图时按材质颜色生成调色板），在
+  `Config/Tables/imported_models.json` 里登记名称、文件、缩放/偏移/UV 等参数；
+- 内置查找入口：
+
+  ```csharp
+  // 按名称取得可直接渲染的 Grid
+  if (ImportedModelTable.Ins.TryCreateGrid("fbx_cube_binary", out Grid grid))
+  {
+      grid.Pos = new Vector3(0, 64, 0);
+  }
+
+  // 直接把实体的网格设为外部模型
+  world.SpawnModelEntity("fbx_cube_binary");
+  ```
+
+- 游戏控制台：`/Models` 列出已加载的外部模型，`/SpawnModel fbx_cube_binary`/`/SpawnModel iron_pickaxe` 在视线前方生成实体；
+- 格式支持、转换规则、扩展方式与回滚说明见
+  [docs/external-model-import.md](docs/external-model-import.md)。
 
 ### 安装与运行
 
@@ -117,7 +141,7 @@ dotnet run --project TextCraft/TextCraft.csproj
 dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 ```
 
-看到“已加载模型 5 个、方块 13 种”及模型/方块清单即表示配置正确；否则会打印具体错误、文件位置与修改建议。
+看到“已加载模型 … 个、方块 … 种、外部模型 … 个”及各模型/方块清单即表示配置正确；否则会打印具体错误、文件位置与修改建议。
 
 🎮 **操作说明**
  
@@ -127,6 +151,8 @@ dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 | 鼠标 | 视角控制 |
 | 空格 | 上升 |
 | Shift | 下降 |
+
+控制台命令：`/LoadWorld <name> [seed]`、`/UnLoadWorld`、`/tp x y z`、`/Models`、`/SpawnModel <name>`
  
 ## 🗺️ 开发路线图
  
@@ -137,6 +163,7 @@ dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 - 方块放置与破坏(完成)
 - 多纹理支持(完成)
 - JSON 数据驱动的方块/模型系统(完成)
+- 外部模型导入（OBJ/FBX，按名称生成 Grid）(完成)
 - UI系统(基本完成)
 - 存档功能(基本完成)
 - 地物放置(开发中)

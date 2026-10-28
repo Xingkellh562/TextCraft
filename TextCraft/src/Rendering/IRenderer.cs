@@ -12,6 +12,7 @@ using System.Threading.Tasks.Sources;
 using TextCraft.src.Core;
 using TextCraft.src.Core.Config;
 using TextCraft.src.Rendering.OIT;
+using TextCraft.src.Table;
 using TextCraft.src.Tools;
 
 namespace TextCraft.src.Rendering
@@ -54,6 +55,10 @@ namespace TextCraft.src.Rendering
 
             shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\blockatlas1.png"),new TextureLoader(),16,16,56);
             context.OitShader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\blockatlas1.png"), new TextureLoader(), 16, 16, 56);
+
+            // 外部导入模型（OBJ/MTL 等）的纹理需要在 OpenGL 上下文中上传；
+            // 几何数据在 TableLoader 阶段已经加载（可无窗口校验），这里只补纹理。
+            ImportedModelTable.Ins.UploadTextures();
 
             //启用一些设置
             context.GetFullScreen();

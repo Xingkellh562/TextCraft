@@ -60,6 +60,7 @@ namespace TextCraft.src.Core
             chunkUpdateMgr = new ChunkUpdateMgr(chunkDataMgr ,gridMgr, chunkStorage, _seed);
 
             EventMgr.Ins.Subscribe(typeof(PlayerTpEventArg),arg => OnPlayerTp(arg as PlayerTpEventArg ?? new PlayerTpEventArg() { pos = playerPos}));
+            EventMgr.Ins.Subscribe(typeof(SpawnModelEventArg), arg => OnSpawnModel(arg as SpawnModelEventArg ?? new SpawnModelEventArg()));
         }
 
         public void Save(string path,WorldLoadData data)
@@ -345,17 +346,25 @@ namespace TextCraft.src.Core
         int _id = 1;
         public void AddEntity(Vector3 pos,Vector3 rot)
         {
+            if (!ImportedModelTable.Ins.TryCreateGrid("aris", out Grid grid))
+            {
+                var available = ImportedModelTable.Ins.Count == 0
+                    ? "（无，请检查 Config/Tables/imported_models.json）"
+                    : string.Join(", ", ImportedModelTable.Ins.Models.Keys.OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+                Console.WriteLine($"[模型] 未找到外部模型 'iron_pickaxe'。可用模型: {available}");
+                return;
+            }
+
             EntityObject entityObject = new EntityObject() { name = "entity", type = EntityType.living };
             Transform trans = new Transform() { position = pos, rotation = rot };
             RigidBody body = new RigidBody(50);
             body.velocity = rot * 256;
             
-            Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
+            Box box = new Box(new Vector3(-0.16f, -0.04f, -0.04f), new Vector3(0.16f, 0.2f, 0.04f));
             ModelCompenent model = new ModelCompenent() { posIndex = pos };
             //InputComponent input = new();
             Moving moving = new Moving() { moveSpeed = 32, flyingSpeed = 96, jumpForce = 11 };
 
-            Grid grid = LoadModel();
             grid.Pos = (Vector3)trans.position;
             gridMgr.AddChunkGrids("Entity", model.posIndex, grid);
 
@@ -369,6 +378,62 @@ namespace TextCraft.src.Core
             //ecsMgr.AddComponent(_id, input);
             ecsMgr.AddComponent(_id, moving);
             _id++;
+        }
+
+        void OnSpawnModel(SpawnModelEventArg arg)
+        {
+            if (string.IsNullOrWhiteSpace(arg.name))
+            {
+                Console.WriteLine("用法: /SpawnModel <模型名>（可用 /Models 查看已加载的外部模型）");
+                return;
+            }
+
+            SpawnModelEntity(arg.name);
+        }
+
+        /// <summary>
+        /// 内置的外部模型实体入口：按名字取外部模型（OBJ 等）的网格生成一个 Entity 图层实体。
+        /// 生成后由 ModelRenderMgr 每帧把实体 Transform 的位置同步到 Grid.Pos。
+        /// </summary>
+        public bool SpawnModelEntity(string modelName, Vector3? position = null)
+        {
+            if (!ImportedModelTable.Ins.TryCreateGrid(modelName, out Grid grid))
+            {
+                var available = ImportedModelTable.Ins.Count == 0
+                    ? "（无，请检查 Config/Tables/imported_models.json）"
+                    : string.Join(", ", ImportedModelTable.Ins.Models.Keys.OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+                Console.WriteLine($"[模型] 未找到外部模型 '{modelName}'。可用模型: {available}");
+                return false;
+            }
+
+            Vector3 forward = (Vector3)playerDir;
+            if (forward.LengthSquared < 1e-6f)
+                forward = Vector3.UnitZ;
+            forward.Normalize();
+
+            Vector3 pos = position ?? (Vector3)playerPos + forward * 2.5f;
+            grid.Pos = pos;
+
+            if (!gridMgr.SetChunkGrids("Entity", pos, grid))
+            {
+                Console.WriteLine("[模型] 无法添加实体网格：Entity 图层不存在。");
+                grid.Dispose();
+                return false;
+            }
+
+            EntityObject entityObject = new EntityObject() { name = modelName, typeName = modelName, type = EntityType.living };
+            Transform trans = new Transform() { position = pos, rotation = playerDir };
+            ModelCompenent model = new ModelCompenent() { posIndex = pos };
+
+            ecsMgr.AddComponent(_id, entityObject);
+            ecsMgr.AddComponent(_id, trans);
+            ecsMgr.AddComponent(_id, model);
+            _id++;
+
+            Console.WriteLine(
+                $"[模型] 已生成实体网格 '{modelName}'（顶点 {grid.vertices?.Length / 6 ?? 0}），" +
+                $"位置 ({pos.X:F2}, {pos.Y:F2}, {pos.Z:F2})");
+            return true;
         }
     }
 

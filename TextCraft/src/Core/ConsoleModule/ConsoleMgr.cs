@@ -2,10 +2,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.Core.Event;
+using TextCraft.src.Table;
 using OpenTK.Mathematics;
 using static System.Collections.Specialized.BitVector32;
 
@@ -20,6 +22,8 @@ namespace TextCraft.src.Core.ConsoleModule
             Console.WriteLine("  或 /LoadWorld [name]        加载世界");
             Console.WriteLine("[seed]参数对于已有存档的世界不会起作用");
             Console.WriteLine("输入 /UnLoadWorld 卸载世界");
+            Console.WriteLine("输入 /SpawnModel [name] 在视线前方生成外部模型实体");
+            Console.WriteLine("输入 /Models 列出已加载的外部模型");
 
             Task.Run(async () => {
                 while (true)
@@ -66,6 +70,32 @@ namespace TextCraft.src.Core.ConsoleModule
                 {
                     EventMgr.Ins.Publish(new TeatureBulidEventArg());
                 }
+                else if (s.Length == 2 && (s[0] == "/SpawnModel" || s[0] == "/SM"))
+                {
+                    EventMgr.Ins.Publish(new SpawnModelEventArg() { name = s[1] });
+                }
+                else if (s.Length == 1 && (s[0] == "/Models" || s[0] == "/ML"))
+                {
+                    PrintImportedModels();
+                }
+            }
+        }
+
+        private static void PrintImportedModels()
+        {
+            var importedModels = ImportedModelTable.Ins;
+            if (importedModels.Count == 0)
+            {
+                Console.WriteLine("没有已加载的外部模型（检查 Config/Tables/imported_models.json）。");
+                return;
+            }
+
+            Console.WriteLine("已加载的外部模型：");
+            foreach (var model in importedModels.Models.Values.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(
+                    $"  {model.Name,-16} 顶点={model.Mesh.VertexCount,5} 三角={model.Mesh.TriangleCount,5} " +
+                    $"来源={Path.GetFileName(model.SourceFile)}");
             }
         }
     }

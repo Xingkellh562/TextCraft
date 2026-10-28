@@ -26,6 +26,11 @@ namespace TextCraft.src.Core.Event
         public Vector3d pos;
     }
 
+    public class SpawnModelEventArg : EventArg
+    {
+        public string name = "";
+    }
+
     public class TeatureBulidEventArg : EventArg
     {}
 

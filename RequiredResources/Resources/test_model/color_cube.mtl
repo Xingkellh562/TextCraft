@@ -1,0 +1,24 @@
+# TextCraft pure-color MTL test fixture
+newmtl red
+Kd 1.000000 0.000000 0.000000
+d 1.000000
+
+newmtl green
+Kd 0.000000 1.000000 0.000000
+d 1.000000
+
+newmtl blue
+Kd 0.000000 0.000000 1.000000
+d 1.000000
+
+newmtl yellow
+Kd 1.000000 1.000000 0.000000
+d 1.000000
+
+newmtl magenta
+Kd 1.000000 0.000000 1.000000
+d 1.000000
+
+newmtl cyan
+Kd 0.000000 1.000000 1.000000
+d 1.000000

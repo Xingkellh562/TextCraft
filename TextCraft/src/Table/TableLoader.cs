@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using TextCraft.src.Core.Config;
 
@@ -30,10 +31,15 @@ namespace TextCraft.src.Table
             var blocks = BlockTable.Ins;
             blocks.Load(ResourcePaths.BlocksFile, models);
 
+            var importedModels = ImportedModelTable.Ins;
+            importedModels.Load(ResourcePaths.ImportedModelsFile);
+
             stopwatch.Stop();
             IsLoaded = true;
 
-            Console.WriteLine($"[资源] 已加载模型 {models.Count} 个、方块 {blocks.Count} 种，耗时 {stopwatch.ElapsedMilliseconds} ms。");
+            Console.WriteLine(
+                $"[资源] 已加载模型 {models.Count} 个、方块 {blocks.Count} 种、外部模型 {importedModels.Count} 个，" +
+                $"耗时 {stopwatch.ElapsedMilliseconds} ms。");
         }
 
         /// <summary>打印数据表摘要，供 --validate-tables 使用。</summary>
@@ -55,6 +61,34 @@ namespace TextCraft.src.Table
                 var modelName = string.IsNullOrWhiteSpace(definition.ModelName) ? "-" : definition.ModelName;
                 Console.WriteLine(
                     $"  {definition.Id,3}:{definition.Type}  {definition.Name,-12} {definition.BlockTypeName,-16} model={modelName}");
+            }
+
+            Console.WriteLine("外部模型列表：");
+            var importedModels = ImportedModelTable.Ins;
+            if (importedModels.Count == 0)
+            {
+                Console.WriteLine("  （无，可在 Config/Tables/imported_models.json 中配置）");
+                return;
+            }
+
+            foreach (var model in importedModels.Models.Values.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                var texture = model.Mesh.GeneratedTexturePixels is { Length: > 0 } &&
+                              model.Mesh.GeneratedTextureWidth > 0
+                    ? $"调色板({model.Mesh.GeneratedTextureWidth}x{model.Mesh.GeneratedTextureHeight})"
+                    : string.IsNullOrWhiteSpace(model.TexturePath)
+                        ? (model.Mesh.BaseColor is { } color
+                            ? $"基础色({color.X:0.##},{color.Y:0.##},{color.Z:0.##},{color.W:0.##})"
+                            : "无（白色占位）")
+                        : (File.Exists(model.TexturePath)
+                            ? Path.GetFileName(model.TexturePath)
+                            : Path.GetFileName(model.TexturePath) + "（缺失）");
+                Console.WriteLine(
+                    $"  {model.Name,-16} 顶点={model.Mesh.VertexCount,5} 三角={model.Mesh.TriangleCount,5} " +
+                    $"纹理={texture} 来源={Path.GetFileName(model.SourceFile)}");
+                Console.WriteLine(
+                    $"                  包围盒 min=({model.Mesh.Min.X:F3}, {model.Mesh.Min.Y:F3}, {model.Mesh.Min.Z:F3}) " +
+                    $"max=({model.Mesh.Max.X:F3}, {model.Mesh.Max.Y:F3}, {model.Mesh.Max.Z:F3})");
             }
         }
     }

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "autoDiscover": true,
+  "searchPaths": [
+    "Resources/test_model",
+    "Resources/models"
+  ],
+  "models": [
+    {
+      "name": "iron_pickaxe",
+      "file": "iron_pickaxe.obj",
+      "scale": 1.0,
+      "flipV": true
+    },
+    {
+      "name": "fbx_cube_binary",
+      "file": "fbx/fbx_cube_binary.fbx",
+      "scale": 1.0,
+      "flipV": true
+    },
+    {
+      "name": "fbx_cube_ascii",
+      "file": "fbx/fbx_cube_ascii.fbx",
+      "scale": 1.0,
+      "flipV": true
+    },
+    {
+      "name": "aris",
+      "file": "aris.obj",
+      "scale": 1.0,
+      "flipV": true
+    }
+  ]
+}

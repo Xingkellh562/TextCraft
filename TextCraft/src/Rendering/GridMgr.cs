@@ -32,6 +32,24 @@ namespace TextCraft.src.Rendering
             return grids[layer].TryAdd(pos, grid);
         }
 
+        /// <summary>
+        /// 覆盖式放置网格：目标位置已有网格时先回收旧的，再放入新的。
+        /// 用于把实体网格替换成外部导入模型等场景（AddChunkGrids 在键冲突时会失败）。
+        /// </summary>
+        public bool SetChunkGrids(string layer, Vector3 pos, Grid grid)
+        {
+            if (!grids.ContainsKey(layer))
+                return false;
+
+            if (grids[layer].TryRemove(pos, out var oldGrid) && oldGrid != null)
+            {
+                oldGrid.ResetForPool();
+                Pools.Ins.gridPool.Enter(oldGrid);
+            }
+
+            return grids[layer].TryAdd(pos, grid);
+        }
+
         public void RemoveChunkGrids(string layer, Vector3 pos)
         {
             if (!grids.ContainsKey(layer)) return;

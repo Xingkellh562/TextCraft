@@ -17,52 +17,47 @@ namespace TextCraft.src.Rendering
         private int _width, _height;
         public int Width => _width;
         public int Height => _height;
-        private byte[] _atlasData = new byte[] { };
+        private byte[] _atlasData = Array.Empty<byte>();
+
         public void Load(string location, TextureLoader loader)
         {
             loader.LoadTexture(location);
-            _atlasData = loader.pixelData;
-            _width = loader.imageX;
-            _height = loader.imageY;
-
-            // 创建纹理并上传数据（只在此处调用 GenTexture）
-            Handle = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, Handle);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapLinear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _width, _height, 0,
-                          PixelFormat.Rgba, PixelType.UnsignedByte, _atlasData);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            Upload(loader.pixelData, loader.imageX, loader.imageY,
+                TextureMinFilter.NearestMipmapLinear, TextureMagFilter.Nearest, generateMipmap: true);
         }
-        public void Load(string location, TextureLoader loader,int cols,int rows,int padding)
+
+        public void Load(string location, TextureLoader loader, int cols, int rows, int padding)
         {
             loader.LoadAtlasWithPadding(location, cols, rows, padding);
-            _atlasData = loader.pixelData;
-            _width = loader.imageX;
-            _height = loader.imageY;
-
-            // 创建纹理并上传数据（只在此处调用 GenTexture）
-            Handle = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, Handle);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapLinear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _width, _height, 0,
-                          PixelFormat.Rgba, PixelType.UnsignedByte, _atlasData);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            Upload(loader.pixelData, loader.imageX, loader.imageY,
+                TextureMinFilter.NearestMipmapLinear, TextureMagFilter.Nearest, generateMipmap: true);
         }
+
+        /// <summary>
+        /// 直接上传 RGBA 像素数据（用于程序生成的纹理，例如外部模型缺纹理时的白色/纯色/调色板纹理）。
+        /// </summary>
+        public void LoadPixels(byte[] rgbaPixels, int width, int height, bool generateMipmap = true)
+        {
+            if (rgbaPixels == null || rgbaPixels.Length < width * height * 4)
+                throw new ArgumentException("像素数据长度与宽高不匹配", nameof(rgbaPixels));
+
+            Upload(rgbaPixels, width, height,
+                generateMipmap ? TextureMinFilter.NearestMipmapLinear : TextureMinFilter.Nearest,
+                TextureMagFilter.Nearest,
+                generateMipmap);
+        }
+
         public void LoadFont()
         {
-            _atlasData = FontLoader.Ins.PixelData;
-            _width = FontLoader.Ins.Width;
-            _height = FontLoader.Ins.Height;
+            Upload(FontLoader.Ins.PixelData, FontLoader.Ins.Width, FontLoader.Ins.Height,
+                TextureMinFilter.Nearest, TextureMagFilter.Nearest, generateMipmap: false);
+        }
+
+        private void Upload(byte[] data, int width, int height, TextureMinFilter minFilter, TextureMagFilter magFilter, bool generateMipmap)
+        {
+            _atlasData = data;
+            _width = width;
+            _height = height;
 
             // 创建纹理并上传数据（只在此处调用 GenTexture）
             Handle = GL.GenTexture();
@@ -70,13 +65,16 @@ namespace TextCraft.src.Rendering
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)minFilter);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, _width, _height, 0,
                           PixelFormat.Rgba, PixelType.UnsignedByte, _atlasData);
 
+            if (generateMipmap)
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         }
+
         public void Bind(TextureUnit unit)
         {
             GL.ActiveTexture(unit);

@@ -28,5 +28,11 @@ namespace TextCraft.src.Core.Config
 
         /// <summary>模型定义目录（每个 *.json 可包含单个模型或模型数组）。</summary>
         public static string ModelsDirectory => Path.Combine(TablesDirectory, "models");
+
+        /// <summary>外部模型（OBJ 等）配置：名称 → 文件、缩放、UV、纹理等。</summary>
+        public static string ImportedModelsFile => Path.Combine(TablesDirectory, "imported_models.json");
+
+        /// <summary>Resources 目录（纹理、字体、外部模型文件等）。</summary>
+        public static string ResourcesDirectory => Path.Combine(BaseDirectory, "Resources");
     }
 }

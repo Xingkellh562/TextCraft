@@ -24,6 +24,15 @@ namespace TextCraft.src.Rendering
         public bool isLoad = false;
         public bool isUpdate = false;
 
+        /// <summary>该网格使用的纹理；为 null 时使用方块图集（atlas）。外部导入模型会绑定自己的纹理。</summary>
+        public Texture? Texture { get; set; }
+
+        /// <summary>UV 缩放系数：方块图集为 16（16×16 个 tile），独立纹理为 1；着色器计算 uv / UvScale。</summary>
+        public float UvScale { get; set; } = 16f;
+
+        /// <summary>网格来源名称（方块模型或外部模型名），仅用于调试/日志。</summary>
+        public string ModelName { get; set; } = "";
+
         public Vector3 Pos
         {
             get => _position; set => _position = value;
@@ -66,6 +75,10 @@ namespace TextCraft.src.Rendering
             // 释放对旧托管数组的引用（帮助 GC，但数组不一定立即回收）
             this.vertices = newVertices ?? Array.Empty<float>();
             if (newPos.HasValue) _position = newPos.Value;
+            // 池中网格会被复用来承载区块顶点，必须清掉外部模型材质，避免污染普通方块渲染
+            Texture = null;
+            UvScale = 16f;
+            ModelName = "";
             // 注意：VAO/VBO 保持不变！isLoad 依然为 true
             isUpdate = false;
         }      

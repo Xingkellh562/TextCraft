@@ -14,6 +14,7 @@ namespace TextCraft.src.Rendering
         private Matrix4 _viewMatrix;
         private Vector3d _chunkPosition;
         private Vector3d _cameraPos;
+        private Grid? _currentGrid;
 
         //顶点着色器
         protected override string VertexShaderSource => @"
@@ -27,7 +28,7 @@ namespace TextCraft.src.Rendering
 
             uniform mat4 projection;
             uniform mat4 view;
-            uniform int atlasSize;
+            uniform float atlasSize;
             uniform vec3 chunkPos;
 
             void main()
@@ -81,7 +82,7 @@ namespace TextCraft.src.Rendering
             GL.UniformMatrix4(location2, false, ref _viewMatrix);
 
             int location3 = GL.GetUniformLocation(_program, "atlasSize");
-            GL.Uniform1(location3, 16);
+            GL.Uniform1(location3, 16f);
         }
         public void SetFog(Vector3 fogColor,float start,float end)
         {
@@ -99,10 +100,16 @@ namespace TextCraft.src.Rendering
         {
             GL.UseProgram(_program);
 
-            atlas.Bind(TextureUnit.Texture0);
+            // 每个 Grid 可以有自己的材质：外部导入模型用独立纹理 + UvScale=1，
+            // 普通方块/区块网格仍使用方块图集 + UvScale=16。
+            Texture texture = _currentGrid?.Texture ?? atlas;
+            texture.Bind(TextureUnit.Texture0);
 
             int textureLocation = GL.GetUniformLocation(_program, "ourTexture");
             GL.Uniform1(textureLocation, 0);
+
+            int atlasSizeLocation = GL.GetUniformLocation(_program, "atlasSize");
+            GL.Uniform1(atlasSizeLocation, _currentGrid?.UvScale ?? 16f);
 
             int location4 = GL.GetUniformLocation(_program, "chunkPos");
             Vector3 pos = (Vector3)(_chunkPosition - _cameraPos);
@@ -122,6 +129,7 @@ namespace TextCraft.src.Rendering
             if(g.vertices == null) g.vertices = new float[0];
             GetVertices(g.vao,g.vbo,g.vertices.Length);
             _chunkPosition = g.Pos;
+            _currentGrid = g;
         }
     }
 }
