@@ -135,4 +135,13 @@
       <int>296</int>
     </rect>
   </Spirit>
+  <Spirit>
+    <name>black</name>
+    <rect>
+      <int>0</int>
+      <int>64</int>
+      <int>1</int>
+      <int>65</int>
+    </rect>
+  </Spirit>
 </ArrayOfSpirit>

@@ -164,9 +164,12 @@ namespace TextCraft.src.Tools
                     for (int z = 0; z < chunkSize.Z; z++)
                     {
                         int block = chunk[x, y, z];
-                        if (BlockTable.Ins[block].BlockType != BlockType.Air)
+                        Block blockDef = BlockTable.Ins[block];
+                        if (blockDef.BlockType != BlockType.Air)
                         {
-                            int g = BlockTable.Ins[block].IsLucency&&length > 1 ? 1 : 0;
+                            // 方块表查找在网格构建的热路径上，缓存到局部变量，避免每个面重复查字典
+                            QuadFace[] model = blockDef.Model;
+                            int g = blockDef.IsLucency && length > 1 ? 1 : 0;
                             for (int w = 0; w < 6; w++)
                             {
                                 int dx = x + neighboursTable[w, 0];
@@ -177,40 +180,44 @@ namespace TextCraft.src.Tools
                                     chunk[dx, dy, dz] :
                                     chunkMgr.GetBlock(dx + chunkSize.X * pos.X, dy + chunkSize.Y * pos.Y, dz + chunkSize.Z * pos.Z); ;
 
+                                Block neiDef = BlockTable.Ins[nei];
+
                                 bool ifCreateFace = false;
-                                if(BlockTable.Ins[nei].BlockType == BlockType.Air || BlockTable.Ins[nei].BlockType == BlockType.IncompleteBlock) ifCreateFace = true;
-                                else if (BlockTable.Ins[nei].BlockType == BlockType.Liquid && BlockTable.Ins[block].BlockType == BlockType.Solid) ifCreateFace = true;
-                                else if (BlockTable.Ins[nei].BlockType == BlockType.Liquid && BlockTable.Ins[block].BlockType == BlockType.IncompleteBlock) ifCreateFace = true;
-                                if (BlockTable.Ins[nei].BlockType == BlockTable.Ins[block].BlockType) ifCreateFace = false;
-                                if (ifCreateFace)
+                                if(neiDef.BlockType == BlockType.Air || neiDef.BlockType == BlockType.IncompleteBlock) ifCreateFace = true;
+                                else if (neiDef.BlockType == BlockType.Liquid && blockDef.BlockType == BlockType.Solid) ifCreateFace = true;
+                                else if (neiDef.BlockType == BlockType.Liquid && blockDef.BlockType == BlockType.IncompleteBlock) ifCreateFace = true;
+                                if (neiDef.BlockType == blockDef.BlockType) ifCreateFace = false;
+                                if (ifCreateFace && w < model.Length)
                                 {
-                                    for (int i = 0; i < BlockTable.Ins[block].Model[w].vertices.Length; i += 6)
+                                    for (int i = 0; i < model[w].vertices.Length; i += 6)
                                     {
 
-                                        float ao = BlockTable.Ins[block].BlockType == BlockType.Solid ? GenerateAO(
+                                        float ao = blockDef.BlockType == BlockType.Solid ? GenerateAO(
                                             x + chunkSize.X * pos.X,
                                             y + chunkSize.Y * pos.Y,
                                             z + chunkSize.Z * pos.Z,
                                             w, vertexIndex[(i / 6) % 6], chunkMgr) : 1;
-                                        vertices[g].Add(BlockTable.Ins[block].Model[w].vertices[i] + x);
-                                        vertices[g].Add(BlockTable.Ins[block].Model[w].vertices[i + 1] + y);
-                                        vertices[g].Add(BlockTable.Ins[block].Model[w].vertices[i + 2] + z);
-                                        vertices[g].Add(BlockTable.Ins[block].Model[w].vertices[i + 3]);
-                                        vertices[g].Add(BlockTable.Ins[block].Model[w].vertices[i + 4]);
-                                        vertices[g].Add(BlockTable.Ins[block].Model[w].vertices[i + 5] + ao);
+                                        vertices[g].Add(model[w].vertices[i] + x);
+                                        vertices[g].Add(model[w].vertices[i + 1] + y);
+                                        vertices[g].Add(model[w].vertices[i + 2] + z);
+                                        vertices[g].Add(model[w].vertices[i + 3]);
+                                        vertices[g].Add(model[w].vertices[i + 4]);
+                                        vertices[g].Add(model[w].vertices[i + 5] + ao);
                                     }
                                 }
                             }
-                            if (BlockTable.Ins[block].Model.Length > 6)
+
+                            // 前 6 个面参与相邻面剔除，索引 6 及之后为附加面（台阶顶面、植物十字面等），始终绘制
+                            for (int f = 6; f < model.Length; f++)
                             {
-                                for (int i = 0; i < BlockTable.Ins[block].Model[6].vertices.Length; i += 6)
+                                for (int i = 0; i < model[f].vertices.Length; i += 6)
                                 {
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i] + x);
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 1] + y);
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 2] + z);
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 3]);
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 4]);
-                                    vertices[g].Add(BlockTable.Ins[block].Model[6].vertices[i + 5] + 1);
+                                    vertices[g].Add(model[f].vertices[i] + x);
+                                    vertices[g].Add(model[f].vertices[i + 1] + y);
+                                    vertices[g].Add(model[f].vertices[i + 2] + z);
+                                    vertices[g].Add(model[f].vertices[i + 3]);
+                                    vertices[g].Add(model[f].vertices[i + 4]);
+                                    vertices[g].Add(model[f].vertices[i + 5] + 1);
                                 }
                             }
                         }

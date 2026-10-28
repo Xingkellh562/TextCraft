@@ -21,6 +21,7 @@ TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来�
 - 🖱️ **第一人称控制** - 完整的玩家移动和视角控制系统
 - 🎯 **物理系统** - 基础的碰撞检测与物理模拟
 - 📦 **资源管理** - 纹理、模型等资源的高效加载与管理
+- 🧩 **数据驱动** - 方块模型与方块种类由 `Config/Tables` 下的 JSON 定义，增删方块无需修改代码
 - 🔧 **模块化架构** - 清晰的代码结构，易于扩展和维护
 
 ## 🛠️ 技术栈
@@ -53,16 +54,36 @@ TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来�
  │   │   │   ├── Grid.cs
  │   │   │   ├── GridMgr.cs
  │   │   │   └── IRenderer.cs
- │   │   ├── Table/          # 数据表
- │   │   │   ├── BlockTable.cs
- │   │   │   └── ModelTable.cs
+ │   │   ├── Table/          # 数据表（从 JSON 加载）
+ │   │   │   ├── BlockTable.cs       # 方块元数据与烘焙后的几何
+ │   │   │   ├── ModelTable.cs       # 具名模型
+ │   │   │   ├── TableLoader.cs      # 启动时统一加载入口
+ │   │   │   └── EntityModelTable.cs
  │   │   ├── Collections/    # 集合工具
  │   │   └── Tools/          # 工具类
  │   └── TextCraft.csproj    # 项目文件
+ ├── RequiredResources/      # 运行期资源（构建时自动同步到输出目录）
  ├── TextCraft.sln           # 解决方案文件
+ ├── docs/                   # 开发文档（含 JSON 化改造说明与回滚手册）
  ├── LICENSE.txt             # 许可证
  └── README.md               # 项目说明
 ```
+### 📦 运行期资源
+
+```
+RequiredResources/
+├── Config/
+│   ├── config.xml
+│   └── Tables/
+│       ├── blocks.json          # 方块定义（id/type/名称/类型/模型/图集 tile…）
+│       └── models/*.json        # 模型定义（一个文件一个模型）
+├── Resources/                   # 纹理、字体、UI 图集
+└── Save/                        # 示例存档
+```
+
+`blocks.json` 与 `models/*.json` 的字段说明、校验规则、改动点与回滚方式见
+[docs/block-model-json-loading.md](docs/block-model-json-loading.md)。
+
 ### 安装与运行
 
 1. **克隆仓库**
@@ -82,9 +103,21 @@ dotnet build --configuration Release
  ```
 dotnet run --project TextCraft/TextCraft.csproj
 ```
-5. **注意事项**
+5. **资源同步与数据表自检**
 
-***首次编译完成后，请将项目目录下的RequiredResources文件夹中的所有文件，全部复制到编译输出目录（如 bin\debug\net8.0）否则会应找不到资源文件而报错。***
+构建时会把仓库根目录的 `RequiredResources` **自动同步**到输出目录（如 `bin\Debug\net8.0`），不再需要手工复制：
+
+- `Config`、`Resources` 每次构建增量复制；
+- `Save` 下的示例存档仅在输出目录还没有 `Save` 时复制，避免覆盖游戏存档；
+- 可用 `-p:SkipRequiredResourcesSync=true` 关闭同步。
+
+修改方块/模型 JSON 后，可以不开窗口快速校验：
+
+```
+dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
+```
+
+看到“已加载模型 5 个、方块 13 种”及模型/方块清单即表示配置正确；否则会打印具体错误、文件位置与修改建议。
 
 🎮 **操作说明**
  
@@ -103,6 +136,7 @@ dotnet run --project TextCraft/TextCraft.csproj
 - 世界生成算法(完成)
 - 方块放置与破坏(完成)
 - 多纹理支持(完成)
+- JSON 数据驱动的方块/模型系统(完成)
 - UI系统(基本完成)
 - 存档功能(基本完成)
 - 地物放置(开发中)

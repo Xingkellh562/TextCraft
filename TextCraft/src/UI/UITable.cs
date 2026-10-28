@@ -49,11 +49,11 @@ namespace TextCraft.src.UI
             var displayBlock = new SpiritComponent(displayBlockRect);
             var loadingText = new TextComponent(loadingRect);
 
-            mainMenuPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["title"].rect);
-            sight.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["sight"].rect);
-            displayPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["displayTable"].rect);
-            displayBlock.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["1"].rect);
-            loadingPanel.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits["black"].rect);
+            mainMenuPanel.SetSpirit(AtlasTable.Ins.uiAtlas.GetSpirit("title").rect);
+            sight.SetSpirit(AtlasTable.Ins.uiAtlas.GetSpirit("sight").rect);
+            displayPanel.SetSpirit(AtlasTable.Ins.uiAtlas.GetSpirit("displayTable").rect);
+            displayBlock.SetSpirit(AtlasTable.Ins.uiAtlas.GetSpirit("1").rect);
+            loadingPanel.SetSpirit(AtlasTable.Ins.uiAtlas.GetSpirit("black").rect);
 
             mainMenuText.ChangeContent("FPS:");
             loadingText.ChangeContent("LOADING");

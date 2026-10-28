@@ -169,8 +169,29 @@ namespace TextCraft.src.Core
 
         static void Main(string[] args)
         {
-            ConfigMgr.Ins.OnLoad(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\config.xml"));
-            //ModelTable.Ins.Save(System.IO.Path.Combine(AppContext.BaseDirectory + "Config\\Tables\\modelTable.xml"));
+            bool validateOnly = args.Any(arg => string.Equals(arg, "--validate-tables", StringComparison.OrdinalIgnoreCase));
+
+            ConfigMgr.Ins.OnLoad(ResourcePaths.GameConfigFile);
+
+            try
+            {
+                TableLoader.LoadAll();
+            }
+            catch (TableLoadException ex)
+            {
+                Console.Error.WriteLine("方块/模型资源加载失败：");
+                Console.Error.WriteLine(ex.Message);
+                Console.Error.WriteLine("如果这是首次运行，请确认 RequiredResources 目录已同步到程序输出目录（正常构建会自动同步）。");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            // 只校验数据表（模型/方块 JSON）而不创建窗口，便于编辑资源后快速自检
+            if (validateOnly)
+            {
+                TableLoader.PrintSummary();
+                return;
+            }
 
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
             using (Game game = new Game(800, 600, "craft"))
@@ -299,6 +320,8 @@ namespace TextCraft.src.Core
             {
                 World world = session.World;
                 int nowBlock = 1;
+                // 快捷栏范围由方块表推导，新增/删除方块后无需再改这里的硬编码数字
+                int maxBlock = Math.Max(1, BlockTable.Ins.MaxPlaceableId);
                 foreach (var entity in world.ecsMgr.GetEntitiesWith(new Type[] { typeof(InputComponent) }))
                 {
                     var input = world.ecsMgr.GetComponent<InputComponent>(entity);
@@ -306,17 +329,17 @@ namespace TextCraft.src.Core
                     if (e.OffsetY > 0)
                     {
                         input.nowBlock -= 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 14);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, maxBlock);
                     }
                     else if (e.OffsetY < 0)
                     {
                         input.nowBlock += 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 14);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, maxBlock);
                     }
                     nowBlock = input.nowBlock;
                     world.ecsMgr.AddComponent(entity, input);
                 }
-                (uIMgr.uITable["displayBlock"] as SpiritComponent)?.SetSpirit(AtlasTable.Ins.uiAtlas.Spirits[nowBlock.ToString()].rect);
+                (uIMgr.uITable["displayBlock"] as SpiritComponent)?.SetSpirit(AtlasTable.Ins.uiAtlas.GetSpirit(nowBlock.ToString()).rect);
             }
         }
     }

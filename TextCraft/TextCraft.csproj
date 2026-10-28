@@ -22,4 +22,37 @@
     </Reference>
   </ItemGroup>
 
+  <!--
+    运行期资源：仓库根目录的 RequiredResources 会在构建时同步到输出目录。
+    Config / Resources 每次构建增量同步；Save 下的示例存档只在输出目录还没有 Save 时复制，
+    避免覆盖游戏内产生的存档。可用 -p:SkipRequiredResourcesSync=true 关闭同步。
+  -->
+  <ItemGroup>
+    <RequiredResourcesContent Include="$(MSBuildProjectDirectory)\..\RequiredResources\**\*.*"
+                              Exclude="$(MSBuildProjectDirectory)\..\RequiredResources\Save\**\*.*" />
+    <RequiredResourcesSampleSave Include="$(MSBuildProjectDirectory)\..\RequiredResources\Save\**\*.*" />
+  </ItemGroup>
+
+  <Target Name="SyncRequiredResources" AfterTargets="Build" Condition="'$(SkipRequiredResourcesSync)' != 'true'">
+    <Copy SourceFiles="@(RequiredResourcesContent)"
+          DestinationFiles="@(RequiredResourcesContent->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(RequiredResourcesContent)' != ''" />
+    <Copy SourceFiles="@(RequiredResourcesSampleSave)"
+          DestinationFiles="@(RequiredResourcesSampleSave->'$(OutDir)Save\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(RequiredResourcesSampleSave)' != '' And !Exists('$(OutDir)Save')" />
+  </Target>
+
+  <Target Name="SyncRequiredResourcesToPublish" AfterTargets="Publish" Condition="'$(SkipRequiredResourcesSync)' != 'true'">
+    <Copy SourceFiles="@(RequiredResourcesContent)"
+          DestinationFiles="@(RequiredResourcesContent->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(RequiredResourcesContent)' != ''" />
+    <Copy SourceFiles="@(RequiredResourcesSampleSave)"
+          DestinationFiles="@(RequiredResourcesSampleSave->'$(PublishDir)Save\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="'@(RequiredResourcesSampleSave)' != '' And !Exists('$(PublishDir)Save')" />
+  </Target>
+
 </Project>
