@@ -1,0 +1,127 @@
+{
+  "version": 1,
+
+  // ============================================================
+  // 图集：名称 → 纹理 + 精灵表。spirits.xml 里的 border 字段表示九宫格边距。
+  // filter: nearest（像素风，方块图标） / linear（平滑，皮肤）
+  // ============================================================
+  "atlases": [
+    {
+      "name": "ui",
+      "texture": "Resources/atlas/uiAtlas/texture.png",
+      "spirits": "Resources/atlas/uiAtlas/spirits.xml",
+      "filter": "nearest",
+      "mipmap": true
+    },
+    {
+      "name": "skin",
+      "texture": "Resources/atlas/uiSkin/texture.png",
+      "spirits": "Resources/atlas/uiSkin/spirits.xml",
+      "filter": "linear",
+      "mipmap": false
+    }
+  ],
+
+  // ============================================================
+  // 字体：每套字体在启动时烘焙成一张字体图集（需要 GL 上下文之外也能构建）
+  // charset: ascii / ascii+ / none；extraChars 直接列中文；
+  // ranges 支持 "0x4E00-0x4EFF" 形式（默认不展开整段 CJK，避免图集过大）
+  // ============================================================
+  "fonts": [
+    {
+      "name": "default",
+      "file": "Resources/ui/msyh.ttc",
+      "family": "",
+      "size": 20,
+      "style": "Regular",
+      "charset": "ascii+",
+      "extraChars": "一上下不世个中为主举也仅仍以件任传位体何作例保倍倒值停元先入全共关内出击切列则创到制加包区单取变口可合同名后否含命回图在地坏块垂处失如始子字存安容尚局层屏已布并序建开式录必忽态总悬戏成或所打批找择按损换据接控提改效数整文新无既时是暂最有未机板枚染校根档模次正步沙没法渲游滑点烘焙然状玩理生用界留略白的盒目直示离种称程空窗符第系素级纹统继续置翻能英菜表视让设试请读调败超距转载输近返还进退选逐野钮闭间随集雾非面顶须题验",
+      "ranges": [],
+      "atlasWidth": 512,
+      "lineSpacing": 1.0
+    },
+    {
+      "name": "title",
+      "file": "Resources/ui/msyhbd.ttc",
+      "family": "",
+      "size": 46,
+      "style": "Bold",
+      "charset": "ascii",
+      "extraChars": "开始游戏已暂停",
+      "ranges": [],
+      "atlasWidth": 512,
+      "lineSpacing": 1.0
+    },
+    {
+      "name": "small",
+      "file": "Resources/ui/msyh.ttc",
+      "family": "",
+      "size": 15,
+      "style": "Regular",
+      "charset": "ascii+",
+      "extraChars": "一上下不世个中为主举也仅仍以件任传位体何作例保倍倒值停元先入全共关内出击切列则创到制加包区单取变口可合同名后否含命回图在地坏块垂处失如始子字存安容尚局层屏已布并序建开式录必忽态总悬戏成或所打批找择按损换据接控提改效数整文新无既时是暂最有未机板枚染校根档模次正步沙没法渲游滑点烘焙然状玩理生用界留略白的盒目直示离种称程空窗符第系素级纹统继续置翻能英菜表视让设试请读调败超距转载输近返还进退选逐野钮闭间随集雾非面顶须题验",
+      "ranges": [],
+      "atlasWidth": 512,
+      "lineSpacing": 1.0
+    }
+  ],
+
+  // ============================================================
+  // 主题：字体别名、精灵引用（"图集名:精灵名"）、颜色（[r,g,b,a]，0~1）
+  // ============================================================
+  "theme": {
+    "font": "default",
+    "fontSmall": "small",
+    "fontTitle": "title",
+    "sprites": {
+      "white": "skin:white",
+      "panel": "skin:panel",
+      "tooltip": "skin:tooltip",
+      "divider": "skin:divider",
+      "button": "skin:button_normal",
+      "buttonHover": "skin:button_hover",
+      "buttonPressed": "skin:button_pressed",
+      "buttonDisabled": "skin:button_disabled",
+      "window": "skin:window",
+      "windowTitle": "skin:windowTitle",
+      "windowShadow": "skin:windowShadow",
+      "close": "skin:close",
+      "checkboxOff": "skin:checkboxOff",
+      "checkboxOn": "skin:checkboxOn",
+      "progressBg": "skin:progressBg",
+      "progressFill": "skin:progressFill",
+      "sliderTrack": "skin:sliderTrack",
+      "sliderFill": "skin:sliderFill",
+      "sliderHandle": "skin:sliderHandle",
+      "slot": "skin:slot",
+            "slotSelected": "skin:slotSelected",
+      "textField": "skin:textField",
+      "textFieldFocused": "skin:textFieldFocused",
+      "arrowDown": "skin:arrowDown",
+      "listItem": "skin:listItem",
+      "listItemHover": "skin:listItemHover",
+      "sight": "ui:sight"
+    },
+    "colors": {
+      "text": [0.94, 0.95, 0.99, 1.0],
+      "textDim": [0.68, 0.71, 0.80, 1.0],
+      "textDisabled": [0.46, 0.48, 0.56, 1.0],
+      "accent": [0.42, 0.67, 1.0, 1.0],
+      "title": [0.99, 0.99, 1.0, 1.0],
+      "shadow": [0.0, 0.0, 0.0, 0.6],
+      "danger": [0.95, 0.42, 0.40, 1.0],
+      "success": [0.45, 0.85, 0.50, 1.0],
+      "tint": [1.0, 1.0, 1.0, 1.0]
+    }
+  },
+
+  // ============================================================
+  // 渲染：mode = batched（按 UI 层级合批） / legacy（每个控件一次 DrawCall）
+  // coalesce 允许跨"中间无重叠"的批次继续合并，进一步减少 DrawCall
+  // ============================================================
+  "render": {
+    "mode": "batched",
+    "coalesce": true,
+    "coalesceWindow": 64
+  }
+}

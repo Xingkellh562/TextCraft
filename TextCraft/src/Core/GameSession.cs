@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,14 +16,24 @@ namespace TextCraft.src.Core
         private bool _isLoad = false;
 
         public bool IsLoad => _isLoad;
+
+        /// <summary>暂停时跳过世界逻辑更新（渲染与 UI 仍然继续）。</summary>
+        public bool Paused { get; set; }
         public void LoadWorld(string name,int seed)
         {
             World = new World(name,seed);
 
             World.Load();
-            GameRender = new GameRenderer(World);
-
-            GameRender.Load();
+            if(GameRender == null)
+            {
+                GameRender = new GameRenderer(World);
+                GameRender.Load();
+            }
+            else if(GameRender is GameRenderer gameRenderer)
+            {
+                gameRenderer.ResetWorld(World);
+            }
+            
             _isLoad = true;
         }
 
@@ -44,7 +54,7 @@ namespace TextCraft.src.Core
         }
         public void Update(float updateTime)
         {
-            if(_isLoad)
+            if(_isLoad && !Paused)
                 World?.Update(updateTime);
         }
     }

@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # TextCraft
 
@@ -23,6 +23,8 @@ TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来�
 - 📦 **资源管理** - 纹理、模型等资源的高效加载与管理
 - 🧩 **数据驱动** - 方块模型与方块种类由 `Config/Tables` 下的 JSON 定义，增删方块无需修改代码
 - 🧱 **外部模型** - 支持 `.obj`(+MTL) 与 `.fbx` 导入，可按名称取得 `Grid` 或直接挂到实体上渲染
+- 🖥️ **UI 渲染系统** - 按 UI 层级合并 Mesh：全屏 UI 只上传一次顶点、每层仅数个 DrawCall；真实字形度量 + 多字体、九宫格精灵、按钮/开关/滑块/输入框/下拉框/可拖动窗口等复合控件
+- 💾 **存档界面** - 「开始游戏」进入可视化存档列表（下拉选择，显示种子与最后游玩时间），也可输入名称与种子创建新世界；游戏内 ESC 打开暂停面板（继续游戏 / 保存并退回主菜单 / 设置 / 退出）
 - 🔧 **模块化架构** - 清晰的代码结构，易于扩展和维护
 
 ## 🛠️ 技术栈
@@ -51,22 +53,43 @@ TextCraft 是一个使用 C# 开发的开源 3D 体素游戏引擎，灵感来�
  │   │   ├── Rendering/      # 渲染模块
  │   │   │   ├── BaseShader.cs
  │   │   │   ├── GameShader.cs
- │   │   │   ├── UIShader.cs
  │   │   │   ├── Grid.cs
  │   │   │   ├── GridMgr.cs
- │   │   │   └── IRenderer.cs
+ │   │   │   ├── IRenderer.cs
+ │   │   │   ├── Atlas.cs            # 多图集 + 九宫格精灵
+ │   │   │   └── UI/                 # UI 渲染：顶点/绘制列表/合批/着色器
+ │   │   │       ├── UIVertex.cs     # 顶点格式、材质、合批键
+ │   │   │       ├── UIDrawList.cs   # 绘制列表：排序、合批、压平
+ │   │   │       ├── UIMeshBuffer.cs # 单个动态 VBO
+ │   │   │       ├── UIBatchRenderer.cs
+ │   │   │       ├── UIShader.cs
+ │   │   │       └── UIRenderer.cs
+ │   │   ├── UI/             # UI 框架：布局、控件、输入、主题、资源
+ │   │   │   ├── UIComponent.cs      # 控件基类（层级/锚点/绘制/事件）
+ │   │   │   ├── UIRect.cs / UILayout.cs / UILayers.cs
+ │   │   │   ├── UIFont.cs / UITheme.cs / UIAssets.cs
+ │   │   │   ├── UIInput.cs          # 命中检测与事件分发
+ │   │   │   ├── UIMgr.cs / UITable.cs
+ │   │   │   ├── UIDiagnostics.cs    # --validate-ui / --ui-capture
+ │   │   │   ├── Widgets/            # Panel/Image/Label/Button/Toggle/Slider/ProgressBar/Window/Hotbar
+ │   │   │   │                       # 另有 TextField（输入框）、Dropdown（下拉框）
+ │   │   │   └── Panels/             # WorldSelect（存档列表+新建世界）/ PauseMenu（ESC 暂停）
  │   │   ├── Table/          # 数据表（从 JSON / 外部文件加载）
  │   │   │   ├── BlockTable.cs        # 方块元数据与烘焙后的几何
  │   │   │   ├── ModelTable.cs        # 具名方块/实体模型
  │   │   │   ├── ImportedModelTable.cs # 外部模型（OBJ/FBX）注册与 Grid 查找
+ │   │   │   ├── UIConfig.cs          # ui.json 加载与校验
+ │   │   │   ├── AtlasTable.cs        # 图集兼容转发层
  │   │   │   ├── TableLoader.cs       # 启动时统一加载入口
  │   │   │   └── EntityModelTable.cs
+ │   │   ├── Save/           # 存档
+ │   │   │   └── SaveList.cs          # 存档目录扫描 + 世界名校验（只读，不改存档格式）
  │   │   ├── Collections/    # 集合工具
- │   │   └── Tools/          # 工具类（ModelImport/ 为外部模型导入器）
+ │   │   └── Tools/          # 工具类（ModelImport/ 外部模型导入器、FontBaker 字体烘焙）
  │   └── TextCraft.csproj    # 项目文件
  ├── RequiredResources/      # 运行期资源（构建时自动同步到输出目录）
  ├── TextCraft.sln           # 解决方案文件
- ├── docs/                   # 开发文档（JSON 化改造、外部模型导入与回滚手册）
+ ├── docs/                   # 开发文档（UI 系统、存档界面/暂停面板、JSON 化改造、外部模型导入与回滚手册）
  ├── LICENSE.txt             # 许可证
  └── README.md               # 项目说明
 ```
@@ -79,13 +102,31 @@ RequiredResources/
 │   └── Tables/
 │       ├── blocks.json          # 方块定义（id/type/名称/类型/模型/图集 tile…）
 │       ├── imported_models.json # 外部模型注册表（名称→OBJ/FBX/缩放/UV/纹理）
-│       └── models/*.json        # 方块/实体模型定义（一个文件一个模型）
+│       ├── models/*.json        # 方块/实体模型定义（一个文件一个模型）
+│       └── ui/ui.json           # UI 图集、字体、主题、渲染选项
 ├── Resources/                   # 纹理、字体、UI 图集、外部模型文件（test_model/，含 fbx/）
+│   └── atlas/
+│       ├── uiAtlas/             # 原有 UI 图集（方块图标、准星、标题）
+│       └── uiSkin/              # 新增：界面皮肤（按钮/面板/窗口…，带九宫格）
 └── Save/                        # 示例存档
 ```
 
 `blocks.json` 与 `models/*.json` 的字段说明、校验规则、改动点与回滚方式见
 [docs/block-model-json-loading.md](docs/block-model-json-loading.md)。
+
+### 🖥️ UI 系统（多层级合批 + 复合控件）
+
+- 所有 UI 元素共享一份顶点数组与一个 VBO，按 `Background → World → Hud → Panel → Window → Popup → Overlay → Debug`
+  八个层级排序后，再按 (纹理, 采样方式, 裁剪矩形) 合并批次：主菜单 136 → **4** 个 DrawCall
+  （设置窗口 246 → 7，游戏 HUD 247 → 8）；
+- 字体用真实字形度量烘焙（支持中文、多套字号），精灵支持多图集与九宫格，全部在
+  `Config/Tables/ui/ui.json` 中配置；
+- 控件：`UIPanel` / `UIImage` / `UILabel` / `UIButton` / `UIToggle` / `UISlider` / `UIProgressBar` /
+  `UIWindow` / `UIHotbar` / `UITextField` / `UIDropdown`，已用于主菜单、存档列表、新建世界、
+  游戏 HUD、暂停面板、设置窗口、加载遮罩与 F3 调试面板；
+- 存档界面与暂停面板的说明、验证与回滚手册见 [docs/save-ui-and-pause-menu.md](docs/save-ui-and-pause-menu.md)；
+- 游戏内按 `F3` 打开渲染统计，按 `F4` 在"合批 / 逐控件 DrawCall"之间切换对比；
+- 架构、合批算法、配置字段、修改点与回滚手册见 [docs/ui-system.md](docs/ui-system.md)。
 
 ### 🧱 外部模型（OBJ / FBX）导入
 
@@ -143,6 +184,21 @@ dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 
 看到“已加载模型 … 个、方块 … 种、外部模型 … 个”及各模型/方块清单即表示配置正确；否则会打印具体错误、文件位置与修改建议。
 
+修改 UI 配置（`Config/Tables/ui/ui.json`、字体、图集）后，可以不开窗口自检 UI：
+
+```
+dotnet run --project TextCraft/TextCraft.csproj -- --validate-ui
+```
+
+会打印图集/字体统计、控件树、各画面的 DrawCall 对比（合批 vs 逐控件），并模拟一遍
+"悬停 → 点击按钮 → 打开窗口 → 点开关 → 拖滑块"的交互；全部 PASS 时退出码为 0。
+
+还可以离屏渲染 UI 截图（隐藏窗口 + FBO，不会弹窗），便于做视觉回归：
+
+```
+TextCraft\bin\Debug\net8.0\TextCraft.exe --ui-capture docs\images --size 1280x720
+```
+
 🎮 **操作说明**
  
 | 按键 | 功能 |
@@ -151,6 +207,9 @@ dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 | 鼠标 | 视角控制 |
 | 空格 | 上升 |
 | Shift | 下降 |
+| Esc | 打开/关闭暂停面板（暂停时冻结世界并释放鼠标） |
+| F3 | 调试面板（控件/图元/顶点/批次/DrawCall/层级） |
+| F4 | 切换 UI 渲染模式（合批 / 逐控件 DrawCall） |
 
 控制台命令：`/LoadWorld <name> [seed]`、`/UnLoadWorld`、`/tp x y z`、`/Models`、`/SpawnModel <name>`
  
@@ -164,7 +223,7 @@ dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 - 多纹理支持(完成)
 - JSON 数据驱动的方块/模型系统(完成)
 - 外部模型导入（OBJ/FBX，按名称生成 Grid）(完成)
-- UI系统(基本完成)
+- UI 系统（多层级合批、字体/图集管线、复合控件）(完成)
 - 存档功能(基本完成)
 - 地物放置(开发中)
 - 光照系统(开发中)
@@ -176,6 +235,24 @@ dotnet run --project TextCraft/TextCraft.csproj -- --validate-tables
 ## 🖼️ 运行效果
 
 ![游戏截图](./Pictures/game_picture.png)
+
+UI 系统截图（`--ui-capture` 离屏渲染，详见 [docs/ui-system.md](docs/ui-system.md)）：
+
+| 主菜单（4 DrawCall） | 设置窗口（7 DrawCall） |
+| --- | --- |
+| ![主菜单](docs/images/ui-main.png) | ![设置窗口](docs/images/ui-settings.png) |
+
+| 游戏 HUD（8 DrawCall） | 调试面板 |
+| --- | --- |
+| ![HUD](docs/images/ui-hud.png) | ![调试面板](docs/images/ui-debug-overlay.png) |
+
+| 存档列表 + 新建世界（9 DrawCall） | ESC 暂停面板（10 DrawCall） |
+| --- | --- |
+| ![存档界面](docs/images/ui-world-select.png) | ![暂停面板](docs/images/ui-pause.png) |
+
+| 展开存档下拉（候选列表在 Popup 层，11 DrawCall） |
+| --- |
+| ![展开下拉](docs/images/ui-world-select-open.png) |
 
 ## 🤝 贡献指南
  

@@ -103,7 +103,9 @@ namespace TextCraft.src.Core
             Save(Path.Combine(AppContext.BaseDirectory + $"Save//{Name}//worldData.xml"), data);
             foreach(var chunkPos in chunkDataMgr.Chunks.Keys)
                 chunkUpdateMgr.CommitChunkDeleteRequest(chunkPos);
-            chunkUpdateMgr.StopChunkUpdate();
+
+            // 等待后台线程把被修改过的区块真正写盘，再释放资源
+            chunkUpdateMgr.StopChunkUpdateAndWait();
             Dispose(true);
         }
 
@@ -313,7 +315,7 @@ namespace TextCraft.src.Core
             if (disposing)
             {
 
-                chunkUpdateMgr?.StopChunkUpdate();
+                chunkUpdateMgr?.StopChunkUpdateAndWait();
                 if (gridMgr != null)
                 {
                     foreach (var grids in gridMgr.grids.Values)

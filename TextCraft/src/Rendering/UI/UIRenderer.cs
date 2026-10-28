@@ -1,74 +1,37 @@
-﻿using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OpenTK.Mathematics;
 using TextCraft.src.UI;
 
 namespace TextCraft.src.Rendering.UI
 {
-    internal class UIRenderer : IRenderer
+    /// <summary>
+    /// <see cref="IRenderer"/> 适配层：UI 的实际绘制委托给 <see cref="UIBatchRenderer"/>，
+    /// 这样 UI 与 3D 渲染在 GameSession 之外保持一致的接口形状。
+    /// </summary>
+    internal sealed class UIRenderer : IRenderer
     {
-        UIShader _shader = new UIShader();
+        private readonly UIMgr _uIMgr;
+        private Vector2i _size;
 
-        Vector2i _size;
-
-        private UIMgr _uIMgr;
+        public UIBatchRenderer Batch { get; } = new UIBatchRenderer();
 
         public UIRenderer(UIMgr uIMgr)
         {
             _uIMgr = uIMgr;
         }
 
-        public void Load()
-        {
-            _shader.CreateShaderProgram();
-            try
-            {
-                //_shader.atlas.Load(Path.Combine(AppContext.BaseDirectory + "Resources\\ui\\UISpirits.png"),new Tools.TextureLoader());
-                _shader.font.LoadFont();
-            }
-            catch
-            {
-                Console.WriteLine("无法找到资源文件，请确保已将项目目录下的RequiredResources文件夹中的所有文件全部复制到编译输出目录");
-            }
+        public void Load() => Batch.Load();
 
-
-            
-            //_shader.GetVertices();
-        }
         public void Draw()
         {
-            GL.Disable(EnableCap.DepthTest);
-            GL.Disable(EnableCap.CullFace);
-            GL.Disable(EnableCap.Multisample);
-            //GL.Enable(EnableCap.Blend);
-            _shader.GetMatrix( _size);
-
-            List<UIComponent> uiCs = new List<UIComponent>();
-            _uIMgr.uITable.components.Traverse(uiCs,false);
-            foreach (var component in uiCs)
-            {
-                _shader.isFont = false;
-                if (component is SpiritComponent spirit)
-                    _shader.GetRectMesh(spirit.rectMesh ?? new UIRectMesh(new float[0]));
-                else if (component is TextComponent text)
-                {
-                    _shader.isFont = true;
-                    _shader.GetRectMesh(text.textMesh ?? new UIRectMesh(new float[0]));
-                }
-
-                _shader.Draw();
-            }
+            if (!UIAssets.Ins.IsLoaded) return;
+            Batch.Render(_uIMgr.Root, _size);
         }
 
-        public void GetCamera(Vector3d pos, Vector3d dir) { }
-
-        public void OnSizeChange(Vector2i size)
+        public void GetCamera(Vector3d pos, Vector3d dir)
         {
-            _size = size;
         }
+
+        public void OnSizeChange(Vector2i size) => _size = size;
     }
 }

@@ -1,4 +1,4 @@
-﻿using OpenTK.Mathematics;
+using OpenTK.Mathematics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,6 +25,9 @@ namespace TextCraft.src.Core.ChunkModule
         BaseTerrainGenerator terrainGenerator;
 
         bool _chunkUpdateRuning = false;
+
+        /// <summary>后台线程是否已经真正退出（用于"保存并退出"时等待落盘）。</summary>
+        private volatile bool _threadFinished;
 
         object _lock = new object();
 
@@ -64,6 +67,7 @@ namespace TextCraft.src.Core.ChunkModule
         public void StartChunkUpdate()
         {
             updateThread.IsBackground = true;
+            _threadFinished = false;
             _chunkUpdateRuning = true;
             updateThread.Start();
         }
@@ -89,25 +93,48 @@ namespace TextCraft.src.Core.ChunkModule
             gridDeleteRequest.Clear();
             gridUpdateRequest.Clear();
         }
+
+        /// <summary>
+        /// 停止后台线程，并等待"待删除区块"队列落盘完成。
+        /// 用于"保存并退回主菜单"这类必须保证数据写完的场合
+        /// （旧实现只置标志位就立刻 Dispose，可能丢掉还没写盘的区块）。
+        /// </summary>
+        public void StopChunkUpdateAndWait(int timeoutMilliseconds = 8000)
+        {
+            StopChunkUpdate();
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            while (!_threadFinished && stopwatch.ElapsedMilliseconds < timeoutMilliseconds)
+                Thread.Sleep(2);
+        }
+
         public void Update()
         {
-            bool chunkUpdateRuning;
-            lock (_lock)
+            try
             {
-                chunkUpdateRuning = _chunkUpdateRuning;
+                while (true)
+                {
+                    bool didWork = false;
+
+                    if (chunkCreateQueue.TryDequeue(out Vector3i result)) { CreateChunk(result); didWork = true; }
+                    if (chunkDeleteQueue.TryDequeue(out result)) { DeleteChunk(result); didWork = true; }
+                    if (gridCommitQueue.TryDequeue(out result)) { CommitRanderChunk(result); didWork = true; }
+                    if (gridDeleteQueue.TryDequeue(out result)) { DeleteRanderChunk(result); didWork = true; }
+                    if (gridUpdateQueue.TryDequeue(out result)) { UpdateRanderChunk(result); didWork = true; }
+
+                    bool running;
+                    lock (_lock) running = _chunkUpdateRuning;
+
+                    // 收到停止信号且待删除队列已清空后才退出（保证落盘）
+                    if (!didWork && !running && chunkDeleteQueue.IsEmpty) break;
+
+                    // 队列空闲时让出 CPU（旧实现是纯忙等，会一直占满一个核）
+                    if (!didWork) Thread.Sleep(1);
+                }
             }
-            while (chunkUpdateRuning || chunkDeleteQueue.Count > 0)
+            finally
             {
-                if (chunkCreateQueue.TryDequeue(out Vector3i result))
-                    CreateChunk(result);
-                if (chunkDeleteQueue.TryDequeue(out result))
-                    DeleteChunk(result);
-                if (gridCommitQueue.TryDequeue(out result))
-                    CommitRanderChunk(result);
-                if (gridDeleteQueue.TryDequeue(out result))
-                    DeleteRanderChunk(result);
-                if (gridUpdateQueue.TryDequeue(out result))
-                    UpdateRanderChunk(result);
+                _threadFinished = true;
             }
         }
 

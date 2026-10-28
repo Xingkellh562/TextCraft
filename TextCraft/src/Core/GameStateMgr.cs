@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TextCraft.src.UI;
-using static System.Collections.Specialized.BitVector32;
 using OpenTK.Graphics.OpenGL4;
 
 namespace TextCraft.src.Core
@@ -22,6 +21,7 @@ namespace TextCraft.src.Core
 
         public void SwitchState(GameState state)
         {
+            // 与旧实现一致：从"已加载世界"切到任何状态都先卸载
             if (_state == GameState.InGame && game.session.IsLoad)
             {
                 game.session.UnLoadWorld();
@@ -33,14 +33,11 @@ namespace TextCraft.src.Core
             if (state == GameState.MainMenu)
             {
                 GL.ClearColor(0, 0, 0, 0);
-                game.uIMgr.uITable["gamePanel"].Sleep();
-                game.uIMgr.uITable["mainMenuPanel"].Wake();
+                game.uIMgr.uITable.EnterMainMenu();
             }
             else
             {
-                //game.uIMgr.uITable["gamePanel"].Wake();
-                game.uIMgr.uITable["loadingPanel"].Wake();
-                game.uIMgr.uITable["mainMenuPanel"].Sleep();
+                game.uIMgr.uITable.ShowLoading(true);
             }
         }
     }

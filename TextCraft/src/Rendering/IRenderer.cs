@@ -49,6 +49,8 @@ namespace TextCraft.src.Rendering
             context = new OITContext();
         }
 
+        public void ResetWorld(World world) => this.world = world;
+
         public void Load()
         {
             shader.CreateShaderProgram();
@@ -99,19 +101,27 @@ namespace TextCraft.src.Rendering
 
             GL.Enable(EnableCap.CullFace);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            foreach (var grid in world.gridMgr.grids["default"].Values)
+            if(world.gridMgr.grids.TryGetValue("default",out _))
             {
-                shader.GetGrid(grid);
-                shader.Draw();
+                foreach (var grid in world.gridMgr.grids["default"].Values)
+                {
+                    shader.GetGrid(grid);
+                    shader.Draw();
+                }
             }
-            foreach (var grid in world.gridMgr.grids["Entity"].Values)
+            if (world.gridMgr.grids.TryGetValue("Entity", out _))
             {
-                shader.GetGrid(grid);
-                shader.Draw();
+                foreach (var grid in world.gridMgr.grids["Entity"].Values)
+                {
+                    shader.GetGrid(grid);
+                    shader.Draw();
+                }
             }
+                
             context.BeginRenderTransparentGrid();
             //GL.DepthMask(false);
 
+            if (!world.gridMgr.grids.TryGetValue("lucency",out _)) return;
             List<Grid> grids = world.gridMgr.grids["lucency"].Values.ToList<Grid>();
             grids.Sort((a, b) => -(a.Pos - cameraPos).Length.CompareTo((b.Pos - cameraPos).Length));
             

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace TextCraft.src.Core.Config
@@ -31,6 +31,12 @@ namespace TextCraft.src.Core.Config
 
         /// <summary>外部模型（OBJ 等）配置：名称 → 文件、缩放、UV、纹理等。</summary>
         public static string ImportedModelsFile => Path.Combine(TablesDirectory, "imported_models.json");
+
+        /// <summary>UI 配置目录（图集 / 字体 / 主题 / 渲染选项）。</summary>
+        public static string UITablesDirectory => Path.Combine(TablesDirectory, "ui");
+
+        /// <summary>UI 全局配置（ui.json）。</summary>
+        public static string UIConfigFile => Path.Combine(UITablesDirectory, "ui.json");
 
         /// <summary>Resources 目录（纹理、字体、外部模型文件等）。</summary>
         public static string ResourcesDirectory => Path.Combine(BaseDirectory, "Resources");

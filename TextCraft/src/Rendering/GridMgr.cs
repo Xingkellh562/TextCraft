@@ -16,7 +16,8 @@ namespace TextCraft.src.Rendering
         public List<string> layers = new List<string>();
         public void AddNewLayers(string name)
         {
-            grids.TryAdd(name, new ConcurrentDictionary<Vector3, Grid>());
+            bool success = grids.TryAdd(name, new ConcurrentDictionary<Vector3, Grid>());
+            if (!success) Console.WriteLine($"创建GridDic:{name}失败，原因未知");
             layers.Add(name);
         }
 
