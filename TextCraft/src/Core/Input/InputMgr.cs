@@ -8,9 +8,10 @@ using System.Threading.Tasks;
 using System.Timers;
 using TextCraft.src.Core.ChunkModule;
 using TextCraft.src.Core.Config;
+using TextCraft.src.Core.EntityModule;
+using TextCraft.src.Core.Physic;
 using TextCraft.src.Table;
 using TextCraft.src.Tools;
-using TextCraft.src.Core.Physic;
 
 
 namespace TextCraft.src.Core.Input
@@ -50,12 +51,11 @@ namespace TextCraft.src.Core.Input
             input.pastMouseY = input.mouseY;
             return Matrix4.CreateFromAxisAngle(arbitraryAxis, angleRad);
         }
-
-        public void LeftMouseButton(World world,float time,ref InputComponent input)
+        public void LeftMouseButton(World world,float time, Transform transform,ref InputComponent input)
         {
             input.timer -= time/2;
             input.timer = Math.Clamp(input.timer,0,input.interval);
-            if (input.destory && input.timer == 0 && Radial.RaycastVoxel(world.chunkDataMgr,world.playerPos,world.playerDir,5,out Vector3i hitPos,out float hitDist,out Vector3i normal))
+            if (input.destory && input.timer == 0 && Radial.RaycastVoxel(world.chunkDataMgr, transform.position, transform.rotation, 5,out Vector3i hitPos,out float hitDist,out Vector3i normal))
             {
                 world.chunkDataMgr.SetBlock(hitPos.X,hitPos.Y,hitPos.Z,0);
 
@@ -85,11 +85,11 @@ namespace TextCraft.src.Core.Input
             }
         }
 
-        public void RightMouseButton(World world, float time,Box box, ref InputComponent input)
+        public void RightMouseButton(World world, float time, Transform transform, Box box, ref InputComponent input)
         {
             input.timer -= time/2;
             input.timer = Math.Clamp(input.timer, 0, input.interval);
-            if (input.build && input.timer == 0 && Radial.RaycastVoxel(world.chunkDataMgr, world.playerPos, world.playerDir, 5, out Vector3i hitPos, out float hitDist, out Vector3i normal))
+            if (input.build && input.timer == 0 && Radial.RaycastVoxel(world.chunkDataMgr, transform.position, transform.rotation, 5, out Vector3i hitPos, out float hitDist, out Vector3i normal))
             {
                 input.timer = input.interval;
 

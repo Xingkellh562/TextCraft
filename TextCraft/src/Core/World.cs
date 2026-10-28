@@ -88,9 +88,6 @@ namespace TextCraft.src.Core
             chunkUpdateMgr.StartChunkUpdate();
             
             LoadPlayer();
-
-            //AddEntity(new Vector3(0, 90, 5), 1);
-            //AddEntity(new Vector3(0, 90, 6), 2);
         }
 
         public void UnLoad()
@@ -150,12 +147,18 @@ namespace TextCraft.src.Core
                     input.spaceTimer = 0;
                 }
 
+                if (input.createEntity && entity == 0)
+                {
+                    input.createEntity = false;
+                    AddEntity((Vector3)trans.position, (Vector3)trans.rotation);
+                }
+
                 Vector4 move = new Vector4((Vector3)trans.rotation, 0) * inputMgr.MouseMoveX(0.5f,ref input);
                 move *= inputMgr.MouseMoveY(0.5f, (Vector3)trans.rotation, ref input);
                 trans.rotation = new Vector3d(move.X, move.Y, move.Z);
 
-                inputMgr.LeftMouseButton(this,updateTime ,ref input);
-                inputMgr.RightMouseButton(this,updateTime,box,ref input);
+                inputMgr.LeftMouseButton(this,updateTime, trans, ref input);
+                inputMgr.RightMouseButton(this,updateTime, trans, box,ref input);
 
                 body.damp = BlockTable.Ins[chunkDataMgr.GetBlock((int)trans.position.X, (int)trans.position.Y - 1, (int)trans.position.Z)].damp;
 
@@ -278,8 +281,18 @@ namespace TextCraft.src.Core
                 {
                     if ((j+1) % 6 == 0)
                         vertices.Add(1);
+                    else if (j % 6 == 3 || j % 6 == 4)
+                    {
+                        float f = EntityModelTable.model1.faces[i][j];
+                        float f2 = EntityModelTable.model1.faces[i][j + 1];
+                        if (f == 0.0f) vertices.Add(f + 0.4375f);
+                        else vertices.Add(f - 0.4375f);
+ 
+                    }
                     else
+                    {
                         vertices.Add(EntityModelTable.model1.faces[i][j]);
+                    }
                 }
                     
             return new Grid() { vertices = vertices.ToArray()};
@@ -329,13 +342,18 @@ namespace TextCraft.src.Core
             _disposed = true;
         }
 
-        void AddEntity(Vector3 pos,int id)
+        int _id = 1;
+        public void AddEntity(Vector3 pos,Vector3 rot)
         {
             EntityObject entityObject = new EntityObject() { name = "entity", type = EntityType.living };
-            Transform trans = new Transform() { position = pos, rotation = new Vector3(0, 0, 1) };
+            Transform trans = new Transform() { position = pos, rotation = rot };
             RigidBody body = new RigidBody(50);
+            body.velocity = rot * 256;
+            
             Box box = new Box(new Vector3(-0.16f, -1.7f, -0.16f), new Vector3(0.16f, 0.2f, 0.16f));
             ModelCompenent model = new ModelCompenent() { posIndex = pos };
+            //InputComponent input = new();
+            Moving moving = new Moving() { moveSpeed = 32, flyingSpeed = 96, jumpForce = 11 };
 
             Grid grid = LoadModel();
             grid.Pos = (Vector3)trans.position;
@@ -343,11 +361,14 @@ namespace TextCraft.src.Core
 
             body.useGravity = true;
 
-            ecsMgr.AddComponent(id, entityObject);
-            ecsMgr.AddComponent(id, trans);
-            ecsMgr.AddComponent(id, body);
-            ecsMgr.AddComponent(id, box);
-            ecsMgr.AddComponent(id, model);
+            ecsMgr.AddComponent(_id, entityObject);
+            ecsMgr.AddComponent(_id, trans);
+            ecsMgr.AddComponent(_id, body);
+            ecsMgr.AddComponent(_id, box);
+            ecsMgr.AddComponent(_id, model);
+            //ecsMgr.AddComponent(_id, input);
+            ecsMgr.AddComponent(_id, moving);
+            _id++;
         }
     }
 

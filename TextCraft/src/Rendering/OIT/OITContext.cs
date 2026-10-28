@@ -151,6 +151,10 @@ namespace TextCraft.src.Rendering.OIT
             GL.BlendFunc(0, BlendingFactorSrc.One, BlendingFactorDest.One);
             //GL.BlendFuncSeparate(0,BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.One);
             GL.BlendFunc(1, BlendingFactorSrc.Zero, BlendingFactorDest.OneMinusSrcColor);
+
+            GL.DepthRange(0, 1);
+            GL.DepthFunc(DepthFunction.Less);
+            GL.Disable(EnableCap.PolygonOffsetFill);
         }
         public void Composite()
         {

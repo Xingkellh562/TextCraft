@@ -117,7 +117,7 @@ namespace TextCraft.src.Tools.Terrain
                         int trueY = y + chunkPos.Y * sizeY;
 
                         chunk[x,y,z] = GetBlockType(trueY, surface, surface - 5,biome);
-                        int block = _teatureGenerator.GetTeatureBlock(trueX, trueY, trueZ, teatureNodes);
+                        int block = 0;// _teatureGenerator.GetTeatureBlock(trueX, trueY, trueZ, teatureNodes);
                         if (block != 0)
                             chunk[x, y, z] = block;
 

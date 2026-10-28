@@ -59,7 +59,8 @@ namespace TextCraft.src.Rendering.OIT
 
             float ComputeWeight(float z, float alpha)
             {
-                return clamp(pow(1 - z,1.0) * alpha,0.01,3e3);
+                //float w = clamp(pow(min(1.0, alpha * 10.0) + 0.01, 3.0) * 1e8 * pow(1.0 - z * 0.9, 3.0), 1e-2, 3e3);
+                return clamp(pow(alpha * 10.0 + 0.01, 3.0) * max(1e-2,3e3 * pow(1-z,3)), 1e-2, 3e3);
             }
 
             void main()
@@ -73,9 +74,10 @@ namespace TextCraft.src.Rendering.OIT
 
                 float alpha = t.a ;
    
-                float z = 20 / (1000.01 - (gl_FragCoord.z * 2.0 - 1.0) * 999.99);
+                float z_ndc = gl_FragCoord.z * 2.0 - 1.0;
+                float linear_depth = (2.0 * 0.1 * 1000.0) / (1000.0 + 0.1 - z_ndc * (1000.0 - 0.1));
                 
-                float weight = ComputeWeight(z, alpha);
+                float weight = ComputeWeight(linear_depth, alpha);
 
                 accumColor = vec4(finalColor * alpha * weight,weight* alpha);
                 revealColor = alpha;

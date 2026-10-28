@@ -34,7 +34,11 @@ namespace TextCraft.src.Core
         public GameStateMgr gameStateMgr;
         public ConsoleMgr consoleMgr = new ConsoleMgr();
 
-        public Game(int width,int height,string title) : base(GameWindowSettings.Default,
+        public Game(int width,int height,string title) : base(
+            new GameWindowSettings
+            {
+                UpdateFrequency = 0.0
+            },
             new NativeWindowSettings
             { 
                 ClientSize = new OpenTK.Mathematics.Vector2i(width, height),
@@ -43,10 +47,11 @@ namespace TextCraft.src.Core
                 Profile = ContextProfile.Core,
                 Flags = ContextFlags.ForwardCompatible,
                 NumberOfSamples = 16,
+                
             })
             
         {
-            VSync = VSyncMode.On;
+            VSync = VSyncMode.Off;
             gameStateMgr = new(this);
             EventMgr.Ins.Subscribe(typeof(LoadWorldEventArg),arg => OnLoadWorld(arg as LoadWorldEventArg ?? new()));
             EventMgr.Ins.Subscribe(typeof(UnLoadWorldEventArg), arg => OnUnLoadWorld(arg as UnLoadWorldEventArg ?? new()));
@@ -96,9 +101,23 @@ namespace TextCraft.src.Core
             uIMgr.uITable["loadingPanel"].Sleep();
             uIMgr.uITable["gamePanel"].Wake();
         }
+
+        private int _frameCount;
+        private double _timeAccumulator;
+        private double _currentFps;
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
+
+            _frameCount++;
+            _timeAccumulator += args.Time;
+            if(_timeAccumulator >= 1.0)
+            {
+                _currentFps = _frameCount / _timeAccumulator;
+                _frameCount = 0;
+                _timeAccumulator = 0;
+            }
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             session.Render();
@@ -109,21 +128,28 @@ namespace TextCraft.src.Core
         }
 
         float _time = 1.0f;
+
+        private double _accumTime = 0.0f;
+        private double rateTime = 1/60.0;
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
+            _accumTime += UpdateTime;
 
-            session.Update((float)UpdateTime);
+            if (_accumTime < rateTime) return;
+
+            session.Update((float)rateTime);
 
             consoleMgr.Update();
 
-            if(uIMgr.uITable["mainMenuText"] is TextComponent fps && _time > 1)
+            if (uIMgr.uITable["mainMenuText"] is TextComponent fps && _time > 1)
             {
-                fps.ChangeContent("FPS: " + (int)(1.0f / UpdateTime));
+                fps.ChangeContent("FPS: " + (int)(_currentFps));
                 _time = 0.0f;
             }
 
-            _time += (float)UpdateTime;
+            _time += (float)rateTime;
+            _accumTime -= rateTime;
             //Console.WriteLine("Time: " + session.World != null ? (int)session.World.GameTime:0);
         }
         protected override void OnResize(ResizeEventArgs e)
@@ -170,6 +196,7 @@ namespace TextCraft.src.Core
                     if (e.Key == Keys.S) input.back = true;
                     if (e.Key == Keys.A) input.left = true;
                     if (e.Key == Keys.D) input.right = true;
+                    if (e.Key == Keys.Q) input.createEntity = true;
                     if (e.Key == Keys.Space)
                     {
                         if (input.spaceTimer == 0)
@@ -279,12 +306,12 @@ namespace TextCraft.src.Core
                     if (e.OffsetY > 0)
                     {
                         input.nowBlock -= 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 11);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 14);
                     }
                     else if (e.OffsetY < 0)
                     {
                         input.nowBlock += 1;
-                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 11);
+                        input.nowBlock = Math.Clamp(input.nowBlock, 1, 14);
                     }
                     nowBlock = input.nowBlock;
                     world.ecsMgr.AddComponent(entity, input);

@@ -109,6 +109,7 @@ namespace TextCraft.src.Rendering
 
             List<Grid> grids = world.gridMgr.grids["lucency"].Values.ToList<Grid>();
             grids.Sort((a, b) => -(a.Pos - cameraPos).Length.CompareTo((b.Pos - cameraPos).Length));
+            
 
             foreach (var grid in grids)
             {

@@ -37,7 +37,9 @@ namespace TextCraft.src.Core.Input
         public int spacePress = 0;
 
         public float spaceInterval = 0.3f;
-        public float spaceTimer = 0; 
+        public float spaceTimer = 0;
+
+        public bool createEntity;
 
         public InputComponent()
         {

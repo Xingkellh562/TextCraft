@@ -101,6 +101,7 @@ namespace TextCraft.src.Table
             var blockList = (List<BlockConfig>?)xs.Deserialize(fs) ?? new List<BlockConfig>();
             foreach (var block in blockList)
             {
+                Console.WriteLine(block.name);
                 AddBlock(block);
             }
         }
@@ -109,11 +110,9 @@ namespace TextCraft.src.Table
     {
 
         public int Id { get; set; } = 0;
-
         public int Type { get; set; } = 0;
         public string Name { get; set; } = "Air";
         public BlockType BlockType { get; set; } = BlockType.Air;
-
         public QuadFace[] Model { get; set; } = new QuadFace[0];
 
         public Vector3 damp = new Vector3(0.1f, 0.02f, 0.1f);
